@@ -1,0 +1,352 @@
+// ---------- GENERATOR & DATASOURCE ----------
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- ENUMS ----------
+enum CentreStatut {
+  Active
+  Suspendu
+}
+
+enum Langue {
+  fr
+  ar
+}
+
+enum RoleUtilisateur {
+  PARENT
+  ENSEIGNANT
+  ADMIN
+}
+
+enum LienTuteur {
+  Mere
+  Pere
+  Proche
+  Tuteur
+  Autre
+}
+
+enum StatutInscription {
+  Candidature
+  ListeAttente
+  Admis
+  Actif
+  Inactif
+}
+
+enum StatutPresence {
+  Present
+  Absent
+  Justifie
+}
+
+enum TypeEntree {
+  Repas
+  Sieste
+  Humeur
+  Participation
+  Libre
+}
+
+enum VisibiliteEvenement {
+  Centre
+  Classe
+  Prive
+}
+
+enum Audience {
+  Parents
+  Enseignants
+  Tous
+}
+
+enum CanalNotification {
+  App
+  Email
+  WhatsApp
+}
+
+enum StatutDiffusion {
+  AEnvoyer
+  Envoye
+  Echec
+  Annule
+}
+
+// ---------- MODELS (MVP cohérent) ----------
+model Centre {
+  id            String   @id @default(uuid())
+  nom           String
+  pays          String?
+  fuseauHoraire String?
+  adresse       String?
+  statut        CentreStatut @default(Active)
+  creeLe        DateTime @default(now())
+
+  classes       Classe[]
+  utilisateurs  Utilisateur[]
+  evenements    EvenementCalendrier[]
+  annonces      Annonce[]
+  rapports      RapportReglementaire[]
+}
+
+model Classe {
+  id        String  @id @default(uuid())
+  centreId  String
+  nom       String
+  capacite  Int?
+  trancheAge String?
+  active    Boolean  @default(true)
+
+  centre    Centre  @relation(fields: [centreId], references: [id])
+  inscriptions    Inscription[]
+  journauxClasse  JournalDeClasse[]
+  evenements      EvenementCalendrier[]
+}
+
+model Utilisateur {
+  id        String @id @default(uuid())
+  centreId  String
+  email     String  @unique
+  telephone String?
+  prenom    String
+  nom       String
+  langue    Langue  @default(fr)
+  actif     Boolean @default(true)
+  role      RoleUtilisateur
+
+  centre    Centre  @relation(fields: [centreId], references: [id])
+}
+
+model Famille {
+  id                 String @id @default(uuid())
+  emailPrincipal     String  @unique
+  languePreferee     Langue  @default(fr)
+  adresseFacturation String?
+
+  tuteurs Tuteur[]
+  enfants Enfant[]
+  factures Facture[]
+}
+
+model Tuteur {
+  id        String @id @default(uuid())
+  familleId String
+  lien      LienTuteur
+  telephone String?
+  email     String?
+  principal Boolean @default(false)
+
+  famille   Famille @relation(fields: [familleId], references: [id])
+}
+
+model Enfant {
+  id            String   @id @default(uuid())
+  familleId     String
+  prenom        String
+  nom           String
+  dateNaissance DateTime
+  genre         String?
+  photoUrl      String?
+
+  famille      Famille @relation(fields: [familleId], references: [id])
+  inscriptions Inscription[]
+  presences    Presence[]
+  journaux     JournalQuotidien[]
+  profilSante  ProfilSante?
+}
+
+model Inscription {
+  id        String @id @default(uuid())
+  enfantId  String
+  classeId  String
+  statut    StatutInscription @default(Candidature)
+  dateDebut DateTime?
+  dateFin   DateTime?
+  priorite  Int?
+
+  enfant Enfant @relation(fields: [enfantId], references: [id])
+  classe Classe @relation(fields: [classeId], references: [id])
+}
+
+model Presence {
+  id           String   @id @default(uuid())
+  enfantId     String
+  date         DateTime
+  statut       StatutPresence @default(Present)
+  arriveeA     DateTime?
+  departA      DateTime?
+  enregistrePar String?
+
+  enfant Enfant @relation(fields: [enfantId], references: [id])
+
+  @@unique([enfantId, date]) // 1 présence/jour/enfant
+}
+
+model JournalQuotidien {
+  id       String   @id @default(uuid())
+  enfantId String
+  date     DateTime
+  notes    String?
+
+  enfant  Enfant @relation(fields: [enfantId], references: [id])
+  entrees EntreeJournal[]
+}
+
+model EntreeJournal {
+  id        String   @id @default(uuid())
+  journalId String
+  type      TypeEntree
+  valeur    String
+  creePar   String?
+  creeLe    DateTime @default(now())
+
+  journal JournalQuotidien @relation(fields: [journalId], references: [id])
+}
+
+model JournalDeClasse {
+  id        String   @id @default(uuid())
+  classeId  String
+  date      DateTime
+  resume    String?
+  creePar   String?
+  creeLe    DateTime @default(now())
+
+  classe     Classe @relation(fields: [classeId], references: [id])
+  diffusions DiffusionResume[]
+}
+
+model DiffusionResume {
+  id              String   @id @default(uuid())
+  journalClasseId String
+  tuteurId        String
+  canal           CanalNotification
+  statut          StatutDiffusion @default(AEnvoyer)
+  envoyeLe        DateTime?
+
+  journal JournalDeClasse @relation(fields: [journalClasseId], references: [id])
+}
+
+model ProfilSante {
+  id         String @id @default(uuid())
+  enfantId   String @unique
+  medecin    String?
+  notes      String?
+
+  enfant        Enfant @relation(fields: [enfantId], references: [id])
+  vaccinations  Vaccination[]
+  allergies     Allergie[]
+  autorisations AutorisationMedicament[]
+}
+
+model Vaccination {
+  id            String   @id @default(uuid())
+  profilSanteId String
+  nom           String
+  date          DateTime
+  lot           String?
+
+  profilSante ProfilSante @relation(fields: [profilSanteId], references: [id])
+}
+
+model Allergie {
+  id            String   @id @default(uuid())
+  profilSanteId String
+  nom           String
+  severite      String?
+  notes         String?
+
+  profilSante ProfilSante @relation(fields: [profilSanteId], references: [id])
+}
+
+model AutorisationMedicament {
+  id            String   @id @default(uuid())
+  profilSanteId String
+  medicament    String
+  dosage        String?
+  autorisePar   String?
+  signeLe       DateTime?
+
+  profilSante ProfilSante @relation(fields: [profilSanteId], references: [id])
+}
+
+model Facture {
+  id           String   @id @default(uuid())
+  familleId    String
+  dateEmission DateTime
+  dateEcheance DateTime?
+  statut       String   @default("Brouillon")
+  devise       String   @default("MAD")
+  total        Decimal  @default(0)
+
+  famille     Famille @relation(fields: [familleId], references: [id])
+  lignes      LigneFacture[]
+  paiements   Paiement[]
+}
+
+model LigneFacture {
+  id           String  @id @default(uuid())
+  factureId    String
+  description  String
+  quantite     Int     @default(1)
+  prixUnitaire Decimal @default(0)
+  tauxTaxe     Decimal @default(0)
+
+  facture Facture @relation(fields: [factureId], references: [id])
+}
+
+model Paiement {
+  id         String  @id @default(uuid())
+  factureId  String
+  montant    Decimal @default(0)
+  statut     String  @default("EnAttente")
+  methode    String?
+  referenceFournisseur String?
+  payeLe     DateTime?
+
+  facture Facture @relation(fields: [factureId], references: [id])
+}
+
+model EvenementCalendrier {
+  id         String   @id @default(uuid())
+  centreId   String
+  classeId   String?
+  titre      String
+  debutA     DateTime
+  finA       DateTime
+  lieu       String?
+  visibilite VisibiliteEvenement @default(Centre)
+
+  centre Centre @relation(fields: [centreId], references: [id])
+  classe Classe? @relation(fields: [classeId], references: [id])
+}
+
+model Annonce {
+  id       String   @id @default(uuid())
+  centreId String
+  titre    String
+  contenu  String
+  audience Audience
+
+  centre Centre @relation(fields: [centreId], references: [id])
+}
+
+model RapportReglementaire {
+  id                  String   @id @default(uuid())
+  centreId            String
+  periodeDebut        DateTime
+  periodeFin          DateTime
+  ratioAdultesEnfants Float?
+  nbIncidents         Int?
+  nbInspections       Int?
+  exportUrl           String?
+
+  centre Centre @relation(fields: [centreId], references: [id])
+}
