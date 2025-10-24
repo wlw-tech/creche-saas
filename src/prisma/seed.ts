@@ -1,5 +1,9 @@
-// prisma/seed.ts
-import { PrismaClient, StatutInscription, LienTuteur, Langue } from '@prisma/client';
+import {
+  PrismaClient,
+  StatutInscription,
+  LienTuteur,
+  Langue,
+} from '@prisma/client';
 
 const prisma = new PrismaClient();
 

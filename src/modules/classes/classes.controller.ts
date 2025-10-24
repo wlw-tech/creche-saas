@@ -40,6 +40,16 @@ export class ClassesController {
     return this.classesService.findAll();
   }
 
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'Get classe statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Classe statistics including occupancy',
+  })
+  getStats(@Param('id') id: string) {
+    return this.classesService.getClasseStats(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a classe by ID' })
   @ApiResponse({
@@ -54,16 +64,6 @@ export class ClassesController {
     return this.classesService.findOne(id);
   }
 
-  @Get(':id/stats')
-  @ApiOperation({ summary: 'Get classe statistics' })
-  @ApiResponse({
-    status: 200,
-    description: 'Classe statistics including occupancy',
-  })
-  getStats(@Param('id') id: string) {
-    return this.classesService.getClasseStats(id);
-  }
-
   @Patch(':id')
   @ApiOperation({ summary: 'Update a classe' })
   @ApiResponse({
@@ -74,10 +74,7 @@ export class ClassesController {
     status: 404,
     description: 'Classe not found',
   })
-  update(
-    @Param('id') id: string,
-    @Body() updateClasseDto: UpdateClasseDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateClasseDto: UpdateClasseDto) {
     return this.classesService.update(id, updateClasseDto);
   }
 
@@ -96,4 +93,3 @@ export class ClassesController {
     return this.classesService.remove(id);
   }
 }
-
