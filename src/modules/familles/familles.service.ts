@@ -31,6 +31,7 @@ export class FamillesService {
       });
       return famille;
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (error.code === 'P2002') {
         throw new BadRequestException(
           'Email principal déjà utilisé par une autre famille',
@@ -85,8 +86,6 @@ export class FamillesService {
   }
 
   async update(id: string, updateFamilleDto: UpdateFamilleDto) {
-    const famille = await this.findOne(id);
-
     try {
       const updated = await this.prisma.famille.update({
         where: { id },
@@ -102,6 +101,7 @@ export class FamillesService {
       });
       return updated;
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (error.code === 'P2002') {
         throw new BadRequestException(
           'Email principal déjà utilisé par une autre famille',
@@ -112,8 +112,6 @@ export class FamillesService {
   }
 
   async remove(id: string) {
-    const famille = await this.findOne(id);
-
     try {
       // Supprimer d'abord les tuteurs
       await this.prisma.tuteur.deleteMany({
@@ -144,8 +142,8 @@ export class FamillesService {
     });
 
     const totalEnfants = enfants.length;
-    const enfantsActifs = enfants.filter(
-      (e) => e.inscriptions.some((i) => i.statut === 'Actif'),
+    const enfantsActifs = enfants.filter((enfant) =>
+      enfant.inscriptions.some((i) => i.statut === 'Actif'),
     ).length;
 
     return {
@@ -158,4 +156,3 @@ export class FamillesService {
     };
   }
 }
-
