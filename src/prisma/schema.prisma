@@ -2,18 +2,12 @@
 generator client {
   provider = "prisma-client-js"
 }
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 // ---------- ENUMS ----------
-enum CentreStatut {
-  Active
-  Suspendu
-}
-
 enum Langue {
   fr
   ar
@@ -55,12 +49,6 @@ enum TypeEntree {
   Libre
 }
 
-enum VisibiliteEvenement {
-  Centre
-  Classe
-  Prive
-}
-
 enum Audience {
   Parents
   Enseignants
@@ -80,59 +68,43 @@ enum StatutDiffusion {
   Annule
 }
 
-// ---------- MODELS (MVP cohérent) ----------
-model Centre {
-  id            String   @id @default(uuid())
-  nom           String
-  pays          String?
-  fuseauHoraire String?
-  adresse       String?
-  statut        CentreStatut @default(Active)
-  creeLe        DateTime @default(now())
-
-  classes       Classe[]
-  utilisateurs  Utilisateur[]
-  evenements    EvenementCalendrier[]
-  annonces      Annonce[]
-  rapports      RapportReglementaire[]
+enum VisibiliteEvenement {
+  Global
+  Classe
+  Prive
 }
 
+// ---------- MODELS (MVP mono-centre) ----------
 model Classe {
-  id        String  @id @default(uuid())
-  centreId  String
-  nom       String
-  capacite  Int?
-  trancheAge String?
-  active    Boolean  @default(true)
-
-  centre    Centre  @relation(fields: [centreId], references: [id])
-  inscriptions    Inscription[]
-  journauxClasse  JournalDeClasse[]
-  evenements      EvenementCalendrier[]
+  id             String   @id @default(uuid())
+  nom            String
+  capacite       Int?
+  trancheAge     String?
+  active         Boolean  @default(true)
+  inscriptions   Inscription[]
+  journauxClasse JournalDeClasse[]
+  evenements     EvenementCalendrier[]
 }
 
 model Utilisateur {
   id        String @id @default(uuid())
-  centreId  String
-  email     String  @unique
+  email     String @unique
   telephone String?
   prenom    String
   nom       String
   langue    Langue  @default(fr)
   actif     Boolean @default(true)
   role      RoleUtilisateur
-
-  centre    Centre  @relation(fields: [centreId], references: [id])
+  creeLe    DateTime @default(now())
 }
 
 model Famille {
   id                 String @id @default(uuid())
-  emailPrincipal     String  @unique
-  languePreferee     Langue  @default(fr)
+  emailPrincipal     String @unique
+  languePreferee     Langue @default(fr)
   adresseFacturation String?
-
-  tuteurs Tuteur[]
-  enfants Enfant[]
+  tuteurs  Tuteur[]
+  enfants  Enfant[]
   factures Facture[]
 }
 
@@ -143,7 +115,6 @@ model Tuteur {
   telephone String?
   email     String?
   principal Boolean @default(false)
-
   famille   Famille @relation(fields: [familleId], references: [id])
 }
 
@@ -155,16 +126,15 @@ model Enfant {
   dateNaissance DateTime
   genre         String?
   photoUrl      String?
-
-  famille      Famille @relation(fields: [familleId], references: [id])
-  inscriptions Inscription[]
-  presences    Presence[]
-  journaux     JournalQuotidien[]
-  profilSante  ProfilSante?
+  famille       Famille @relation(fields: [familleId], references: [id])
+  inscriptions  Inscription[]
+  presences     Presence[]
+  journaux      JournalQuotidien[]
+  profilSante   ProfilSante?
 }
 
 model Inscription {
-  id        String @id @default(uuid())
+  id        String   @id @default(uuid())
   enfantId  String
   classeId  String
   statut    StatutInscription @default(Candidature)
@@ -174,6 +144,9 @@ model Inscription {
 
   enfant Enfant @relation(fields: [enfantId], references: [id])
   classe Classe @relation(fields: [classeId], references: [id])
+
+  @@index([classeId])
+  // Option utile: un enfant n'a qu'1 inscription "Actif" à la fois (non modélisable en unique partiel ici).
 }
 
 model Presence {
@@ -183,11 +156,12 @@ model Presence {
   statut       StatutPresence @default(Present)
   arriveeA     DateTime?
   departA      DateTime?
-  enregistrePar String?
+  enregistrePar String? // Utilisateur.id
 
   enfant Enfant @relation(fields: [enfantId], references: [id])
 
   @@unique([enfantId, date]) // 1 présence/jour/enfant
+  @@index([date])
 }
 
 model JournalQuotidien {
@@ -195,9 +169,11 @@ model JournalQuotidien {
   enfantId String
   date     DateTime
   notes    String?
+  enfant   Enfant @relation(fields: [enfantId], references: [id])
+  entrees  EntreeJournal[]
 
-  enfant  Enfant @relation(fields: [enfantId], references: [id])
-  entrees EntreeJournal[]
+  @@unique([enfantId, date]) // 1 journal/jour/enfant
+  @@index([date])
 }
 
 model EntreeJournal {
@@ -205,10 +181,9 @@ model EntreeJournal {
   journalId String
   type      TypeEntree
   valeur    String
-  creePar   String?
-  creeLe    DateTime @default(now())
-
-  journal JournalQuotidien @relation(fields: [journalId], references: [id])
+  creePar   String?   // Utilisateur.id (enseignant)
+  creeLe    DateTime  @default(now())
+  journal   JournalQuotidien @relation(fields: [journalId], references: [id])
 }
 
 model JournalDeClasse {
@@ -216,11 +191,13 @@ model JournalDeClasse {
   classeId  String
   date      DateTime
   resume    String?
-  creePar   String?
-  creeLe    DateTime @default(now())
-
-  classe     Classe @relation(fields: [classeId], references: [id])
+  creePar   String?   // Utilisateur.id
+  creeLe    DateTime  @default(now())
+  classe    Classe    @relation(fields: [classeId], references: [id])
   diffusions DiffusionResume[]
+
+  @@unique([classeId, date]) // 1 résumé/jour/classe
+  @@index([date])
 }
 
 model DiffusionResume {
@@ -230,8 +207,7 @@ model DiffusionResume {
   canal           CanalNotification
   statut          StatutDiffusion @default(AEnvoyer)
   envoyeLe        DateTime?
-
-  journal JournalDeClasse @relation(fields: [journalClasseId], references: [id])
+  journal         JournalDeClasse @relation(fields: [journalClasseId], references: [id])
 }
 
 model ProfilSante {
@@ -239,7 +215,6 @@ model ProfilSante {
   enfantId   String @unique
   medecin    String?
   notes      String?
-
   enfant        Enfant @relation(fields: [enfantId], references: [id])
   vaccinations  Vaccination[]
   allergies     Allergie[]
@@ -252,8 +227,7 @@ model Vaccination {
   nom           String
   date          DateTime
   lot           String?
-
-  profilSante ProfilSante @relation(fields: [profilSanteId], references: [id])
+  profilSante   ProfilSante @relation(fields: [profilSanteId], references: [id])
 }
 
 model Allergie {
@@ -262,8 +236,7 @@ model Allergie {
   nom           String
   severite      String?
   notes         String?
-
-  profilSante ProfilSante @relation(fields: [profilSanteId], references: [id])
+  profilSante   ProfilSante @relation(fields: [profilSanteId], references: [id])
 }
 
 model AutorisationMedicament {
@@ -273,8 +246,7 @@ model AutorisationMedicament {
   dosage        String?
   autorisePar   String?
   signeLe       DateTime?
-
-  profilSante ProfilSante @relation(fields: [profilSanteId], references: [id])
+  profilSante   ProfilSante @relation(fields: [profilSanteId], references: [id])
 }
 
 model Facture {
@@ -285,10 +257,11 @@ model Facture {
   statut       String   @default("Brouillon")
   devise       String   @default("MAD")
   total        Decimal  @default(0)
+  famille      Famille @relation(fields: [familleId], references: [id])
+  lignes       LigneFacture[]
+  paiements    Paiement[]
 
-  famille     Famille @relation(fields: [familleId], references: [id])
-  lignes      LigneFacture[]
-  paiements   Paiement[]
+  @@index([dateEmission])
 }
 
 model LigneFacture {
@@ -298,8 +271,7 @@ model LigneFacture {
   quantite     Int     @default(1)
   prixUnitaire Decimal @default(0)
   tauxTaxe     Decimal @default(0)
-
-  facture Facture @relation(fields: [factureId], references: [id])
+  facture      Facture @relation(fields: [factureId], references: [id])
 }
 
 model Paiement {
@@ -310,43 +282,18 @@ model Paiement {
   methode    String?
   referenceFournisseur String?
   payeLe     DateTime?
-
-  facture Facture @relation(fields: [factureId], references: [id])
+  facture    Facture @relation(fields: [factureId], references: [id])
 }
 
 model EvenementCalendrier {
   id         String   @id @default(uuid())
-  centreId   String
   classeId   String?
   titre      String
   debutA     DateTime
   finA       DateTime
   lieu       String?
-  visibilite VisibiliteEvenement @default(Centre)
+  visibilite VisibiliteEvenement @default(Global)
+  classe     Classe?  @relation(fields: [classeId], references: [id])
 
-  centre Centre @relation(fields: [centreId], references: [id])
-  classe Classe? @relation(fields: [classeId], references: [id])
-}
-
-model Annonce {
-  id       String   @id @default(uuid())
-  centreId String
-  titre    String
-  contenu  String
-  audience Audience
-
-  centre Centre @relation(fields: [centreId], references: [id])
-}
-
-model RapportReglementaire {
-  id                  String   @id @default(uuid())
-  centreId            String
-  periodeDebut        DateTime
-  periodeFin          DateTime
-  ratioAdultesEnfants Float?
-  nbIncidents         Int?
-  nbInspections       Int?
-  exportUrl           String?
-
-  centre Centre @relation(fields: [centreId], references: [id])
+  @@index([debutA])
 }
