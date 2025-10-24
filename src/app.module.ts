@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { PrismaModule } from './prisma/prisma.module';
 import { ClassesModule } from './modules/classes/classes.module';
+import { FamillesModule } from './modules/familles/familles.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { ClassesModule } from './modules/classes/classes.module';
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
     PrismaModule,
     ClassesModule,
+    FamillesModule,
   ],
 })
 export class AppModule {}
