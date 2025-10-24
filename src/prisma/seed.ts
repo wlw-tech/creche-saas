@@ -1,13 +1,15 @@
 // prisma/seed.ts
-import { PrismaClient, StatutInscription, LienTuteur, Langue, RoleUtilisateur } from '@prisma/client';
+import { PrismaClient, StatutInscription, LienTuteur, Langue } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Seed: start');
 
-  // 1) Classes
-  const petiteSection = await prisma.classe.upsert({
+  try {
+    // 1) Classes
+    console.log('📚 Creating classes...');
+    const petiteSection = await prisma.classe.upsert({
     where: { id: '00000000-0000-0000-0000-000000000001' }, // id fixe pour démo (facile à requêter)
     update: {},
     create: {
@@ -31,8 +33,11 @@ async function main() {
     },
   });
 
-  // 2) Familles + Tuteurs + Enfants (2 familles, 4 enfants)
-  const familleA = await prisma.famille.upsert({
+    console.log('✅ Classes created');
+
+    // 2) Familles + Tuteurs + Enfants (2 familles, 4 enfants)
+    console.log('👨‍👩‍👧‍👦 Creating families...');
+    const familleA = await prisma.famille.upsert({
     where: { emailPrincipal: 'famille.a@example.com' },
     update: {},
     create: {
@@ -101,44 +106,52 @@ async function main() {
     include: { enfants: true },
   });
 
-  // 3) Inscriptions (actives) : 2 enfants en Petite Section, 2 en Moyenne Section
-  const [sara, yassine] = familleA.enfants;
-  const [aya, omar] = familleB.enfants;
+    console.log('✅ Families created');
 
-  await prisma.inscription.create({
-    data: {
-      enfantId: sara.id,
-      classeId: petiteSection.id,
-      statut: StatutInscription.Actif,
-      dateDebut: new Date('2024-09-01'),
-    },
-  });
-  await prisma.inscription.create({
-    data: {
-      enfantId: yassine.id,
-      classeId: moyenneSection.id,
-      statut: StatutInscription.Actif,
-      dateDebut: new Date('2024-09-01'),
-    },
-  });
-  await prisma.inscription.create({
-    data: {
-      enfantId: aya.id,
-      classeId: petiteSection.id,
-      statut: StatutInscription.Actif,
-      dateDebut: new Date('2024-09-01'),
-    },
-  });
-  await prisma.inscription.create({
-    data: {
-      enfantId: omar.id,
-      classeId: moyenneSection.id,
-      statut: StatutInscription.Actif,
-      dateDebut: new Date('2024-09-01'),
-    },
-  });
+    // 3) Inscriptions (actives) : 2 enfants en Petite Section, 2 en Moyenne Section
+    console.log('📝 Creating inscriptions...');
+    const [sara, yassine] = familleA.enfants;
+    const [aya, omar] = familleB.enfants;
 
-  console.log('✅ Seed: done');
+    await prisma.inscription.create({
+      data: {
+        enfantId: sara.id,
+        classeId: petiteSection.id,
+        statut: StatutInscription.Actif,
+        dateDebut: new Date('2024-09-01'),
+      },
+    });
+    await prisma.inscription.create({
+      data: {
+        enfantId: yassine.id,
+        classeId: moyenneSection.id,
+        statut: StatutInscription.Actif,
+        dateDebut: new Date('2024-09-01'),
+      },
+    });
+    await prisma.inscription.create({
+      data: {
+        enfantId: aya.id,
+        classeId: petiteSection.id,
+        statut: StatutInscription.Actif,
+        dateDebut: new Date('2024-09-01'),
+      },
+    });
+    await prisma.inscription.create({
+      data: {
+        enfantId: omar.id,
+        classeId: moyenneSection.id,
+        statut: StatutInscription.Actif,
+        dateDebut: new Date('2024-09-01'),
+      },
+    });
+
+    console.log('✅ Inscriptions created');
+    console.log('✅ Seed: done');
+  } catch (error) {
+    console.error('❌ Seed error:', error);
+    throw error;
+  }
 }
 
 main()

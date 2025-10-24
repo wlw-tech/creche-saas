@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { StatutInscription } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateClasseDto } from './dto/create-classe.dto';
 import { UpdateClasseDto } from './dto/update-classe.dto';
@@ -97,7 +98,8 @@ export class ClassesService {
   }
 
   async remove(id: string) {
-    const classe = await this.findOne(id);
+    // Verify classe exists before deletion
+    await this.findOne(id);
 
     try {
       return await this.prisma.classe.delete({
@@ -118,7 +120,7 @@ export class ClassesService {
     });
 
     const activeInscriptions = inscriptions.filter(
-      (i) => i.statut === 'Actif',
+      (i) => i.statut === StatutInscription.Actif,
     );
 
     return {
