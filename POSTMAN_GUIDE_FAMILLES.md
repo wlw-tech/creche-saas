@@ -38,15 +38,11 @@ Content-Type: application/json
   "tuteurs": [
     {
       "lien": "Mere",
-      "prenom": "Fatima",
-      "nom": "Alaoui",
       "telephone": "+212612345678",
       "email": "fatima@example.com"
     },
     {
       "lien": "Pere",
-      "prenom": "Ahmed",
-      "nom": "Alaoui",
       "telephone": "+212687654321",
       "email": "ahmed@example.com"
     }

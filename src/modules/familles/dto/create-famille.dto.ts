@@ -21,14 +21,6 @@ export class CreateTuteurDto {
   @IsOptional()
   @IsEmail()
   email?: string;
-
-  @IsOptional()
-  @IsString()
-  prenom?: string;
-
-  @IsOptional()
-  @IsString()
-  nom?: string;
 }
 
 export class CreateFamilleDto {

@@ -114,11 +114,23 @@ export class FamillesService {
   async remove(id: string) {
     const famille = await this.findOne(id);
 
-    await this.prisma.famille.delete({
-      where: { id },
-    });
+    try {
+      // Supprimer d'abord les tuteurs
+      await this.prisma.tuteur.deleteMany({
+        where: { familleId: id },
+      });
 
-    return { message: 'Famille supprimée avec succès' };
+      // Puis supprimer la famille
+      await this.prisma.famille.delete({
+        where: { id },
+      });
+
+      return { message: 'Famille supprimée avec succès' };
+    } catch {
+      throw new BadRequestException(
+        'Impossible de supprimer la famille. Vérifiez les dépendances.',
+      );
+    }
   }
 
   async getFamilleStats(id: string) {
