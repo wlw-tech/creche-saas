@@ -36,4 +36,4 @@ $ pnpm run test:cov
 
 ## License
 
-MIT
+

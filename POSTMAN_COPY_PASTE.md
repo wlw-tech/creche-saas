@@ -1,8 +1,8 @@
-# 📋 Postman Copy-Paste Ready Examples
+#  Postman Copy-Paste Ready Examples
 
-## 🚀 Quick Copy-Paste for All Endpoints
+##  Quick Copy-Paste for All Endpoints
 
-### 1️⃣ CREATE - POST /api/familles
+### 1 CREATE - POST /api/familles
 
 **URL:**
 ```
