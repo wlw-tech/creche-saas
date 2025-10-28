@@ -6,9 +6,7 @@ import {
   IsBoolean,
   IsArray,
   ValidateNested,
-  IsUUID,
   IsISO8601,
-  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -48,7 +46,7 @@ export class FamilleDto {
  */
 export class TuteurDto {
   @ApiProperty({
-    description: 'Lien de parenté avec l\'enfant',
+    description: "Lien de parenté avec l'enfant",
     enum: ['Mere', 'Pere', 'Proche', 'Tuteur', 'Autre'],
   })
   @IsEnum(LienTuteur)
@@ -98,14 +96,14 @@ export class TuteurDto {
  */
 export class EnfantDto {
   @ApiProperty({
-    description: 'Prénom de l\'enfant',
+    description: "Prénom de l'enfant",
     example: 'Nour',
   })
   @IsString()
   prenom: string;
 
   @ApiProperty({
-    description: 'Nom de l\'enfant',
+    description: "Nom de l'enfant",
     example: 'B.',
   })
   @IsString()
@@ -119,7 +117,7 @@ export class EnfantDto {
   dateNaissance: string;
 
   @ApiPropertyOptional({
-    description: 'Genre de l\'enfant',
+    description: "Genre de l'enfant",
     example: 'F',
   })
   @IsOptional()
@@ -127,7 +125,7 @@ export class EnfantDto {
   genre?: string;
 
   @ApiPropertyOptional({
-    description: 'URL de la photo de l\'enfant',
+    description: "URL de la photo de l'enfant",
     example: null,
   })
   @IsOptional()
@@ -179,7 +177,7 @@ export class CreateInscriptionDto {
   tuteurs: TuteurDto[];
 
   @ApiProperty({
-    description: 'Données de l\'enfant',
+    description: "Données de l'enfant",
     type: EnfantDto,
   })
   @ValidateNested()
@@ -210,4 +208,3 @@ export class CreateInscriptionDto {
   @IsString()
   commentaire?: string;
 }
-

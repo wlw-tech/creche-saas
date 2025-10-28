@@ -1,0 +1,223 @@
+{
+  "info": {
+    "name": "Crèche API - Auth & Users",
+    "description": "Collection pour tester l'authentification et la gestion des utilisateurs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@wlw.ma\",\n  \"password\": \"change_me\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin - Users",
+      "item": [
+        {
+          "name": "Invite Teacher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"prof@wlw.ma\",\n  \"prenom\": \"Ahmed\",\n  \"nom\": \"Dupont\",\n  \"telephone\": \"+212612345678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users/teachers/invite",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "teachers", "invite"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users?role=ENSEIGNANT&statut=ACTIVE&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "ENSEIGNANT"
+                },
+                {
+                  "key": "statut",
+                  "value": "ACTIVE"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/{{userId}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "{{userId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statut\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users/{{userId}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "{{userId}}", "status"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin - Inscriptions",
+      "item": [
+        {
+          "name": "Accept Inscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Inscription acceptée\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/inscriptions/{{inscriptionId}}/accept",
+              "host": ["{{base_url}}"],
+              "path": ["inscriptions", "{{inscriptionId}}", "accept"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Inscription",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"raison\": \"Capacité atteinte\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/inscriptions/{{inscriptionId}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["inscriptions", "{{inscriptionId}}", "reject"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "inscriptionId",
+      "value": ""
+    }
+  ]
+}
+

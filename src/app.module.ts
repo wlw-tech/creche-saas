@@ -6,6 +6,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ClassesModule } from './modules/classes/classes.module';
 import { FamillesModule } from './modules/familles/familles.module';
 import { InscriptionsModule } from './modules/inscriptions/inscriptions.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { CaptchaPlaceholderMiddleware } from './common/middlewares/captcha-placeholder.middleware';
 
@@ -18,6 +20,8 @@ import { CaptchaPlaceholderMiddleware } from './common/middlewares/captcha-place
     ClassesModule,
     FamillesModule,
     InscriptionsModule,
+    AuthModule,
+    UsersModule,
   ],
 })
 export class AppModule implements NestModule {

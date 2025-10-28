@@ -2,6 +2,7 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -17,6 +18,12 @@ enum RoleUtilisateur {
   PARENT
   ENSEIGNANT
   ADMIN
+}
+
+enum StatutUtilisateur {
+  INVITED
+  ACTIVE
+  DISABLED
 }
 
 enum LienTuteur {
@@ -76,57 +83,73 @@ enum VisibiliteEvenement {
 
 // ---------- MODELS (MVP mono-centre) ----------
 model Classe {
-  id             String   @id @default(uuid())
+  id             String                @id @default(uuid())
   nom            String
   capacite       Int?
   trancheAge     String?
-  active         Boolean  @default(true)
+  active         Boolean               @default(true)
   inscriptions   Inscription[]
   journauxClasse JournalDeClasse[]
   evenements     EvenementCalendrier[]
 }
 
 model Utilisateur {
-  id        String @id @default(uuid())
-  email     String @unique
-  telephone String?
-  prenom    String
-  nom       String
-  langue    Langue  @default(fr)
-  actif     Boolean @default(true)
-  role      RoleUtilisateur
-  creeLe    DateTime @default(now())
+  id           String            @id @default(uuid())
+  email        String            @unique
+  telephone    String?
+  prenom       String
+  nom          String
+  langue       Langue            @default(fr)
+  role         RoleUtilisateur
+  statut       StatutUtilisateur @default(INVITED)
+  authUserId   String?           @unique // Supabase auth.users.id
+  tuteurId     String?           @unique // Lien vers Tuteur si PARENT
+  enseignantId String?           @unique // Lien vers Enseignant si TEACHER (futur)
+  inviteLe     DateTime?
+  activeLe     DateTime?
+  dernierAcces DateTime?
+  creeLe       DateTime          @default(now())
+  modifieLe    DateTime          @updatedAt
+
+  tuteur Tuteur? @relation(fields: [tuteurId], references: [id])
+
+  @@index([role])
+  @@index([statut])
+  @@index([email])
 }
 
 model Famille {
-  id                 String @id @default(uuid())
-  emailPrincipal     String @unique
-  languePreferee     Langue @default(fr)
+  id                 String    @id @default(uuid())
+  emailPrincipal     String    @unique
+  languePreferee     Langue    @default(fr)
   adresseFacturation String?
-  tuteurs  Tuteur[]
-  enfants  Enfant[]
-  factures Facture[]
+  tuteurs            Tuteur[]
+  enfants            Enfant[]
+  factures           Facture[]
 }
 
 model Tuteur {
-  id        String @id @default(uuid())
-  familleId String
-  lien      LienTuteur
-  telephone String?
-  email     String?
-  principal Boolean @default(false)
-  famille   Famille @relation(fields: [familleId], references: [id])
+  id          String       @id @default(uuid())
+  familleId   String
+  lien        LienTuteur
+  telephone   String?
+  email       String?
+  principal   Boolean      @default(false)
+  famille     Famille      @relation(fields: [familleId], references: [id])
+  utilisateur Utilisateur? // Lien vers compte utilisateur si invité
+
+  @@index([familleId])
 }
 
 model Enfant {
-  id            String   @id @default(uuid())
+  id            String             @id @default(uuid())
   familleId     String
   prenom        String
   nom           String
   dateNaissance DateTime
   genre         String?
   photoUrl      String?
-  famille       Famille @relation(fields: [familleId], references: [id])
+  famille       Famille            @relation(fields: [familleId], references: [id])
   inscriptions  Inscription[]
   presences     Presence[]
   journaux      JournalQuotidien[]
@@ -134,7 +157,7 @@ model Enfant {
 }
 
 model Inscription {
-  id        String   @id @default(uuid())
+  id        String            @id @default(uuid())
   enfantId  String
   classeId  String
   statut    StatutInscription @default(Candidature)
@@ -144,18 +167,18 @@ model Inscription {
 
   enfant Enfant @relation(fields: [enfantId], references: [id])
   classe Classe @relation(fields: [classeId], references: [id])
+  // Option utile: un enfant n'a qu'1 inscription "Actif" à la fois (non modélisable en unique partiel ici).
 
   @@index([classeId])
-  // Option utile: un enfant n'a qu'1 inscription "Actif" à la fois (non modélisable en unique partiel ici).
 }
 
 model Presence {
-  id           String   @id @default(uuid())
-  enfantId     String
-  date         DateTime
-  statut       StatutPresence @default(Present)
-  arriveeA     DateTime?
-  departA      DateTime?
+  id            String         @id @default(uuid())
+  enfantId      String
+  date          DateTime
+  statut        StatutPresence @default(Present)
+  arriveeA      DateTime?
+  departA       DateTime?
   enregistrePar String? // Utilisateur.id
 
   enfant Enfant @relation(fields: [enfantId], references: [id])
@@ -165,11 +188,11 @@ model Presence {
 }
 
 model JournalQuotidien {
-  id       String   @id @default(uuid())
+  id       String          @id @default(uuid())
   enfantId String
   date     DateTime
   notes    String?
-  enfant   Enfant @relation(fields: [enfantId], references: [id])
+  enfant   Enfant          @relation(fields: [enfantId], references: [id])
   entrees  EntreeJournal[]
 
   @@unique([enfantId, date]) // 1 journal/jour/enfant
@@ -177,23 +200,23 @@ model JournalQuotidien {
 }
 
 model EntreeJournal {
-  id        String   @id @default(uuid())
+  id        String           @id @default(uuid())
   journalId String
   type      TypeEntree
   valeur    String
-  creePar   String?   // Utilisateur.id (enseignant)
-  creeLe    DateTime  @default(now())
+  creePar   String? // Utilisateur.id (enseignant)
+  creeLe    DateTime         @default(now())
   journal   JournalQuotidien @relation(fields: [journalId], references: [id])
 }
 
 model JournalDeClasse {
-  id        String   @id @default(uuid())
-  classeId  String
-  date      DateTime
-  resume    String?
-  creePar   String?   // Utilisateur.id
-  creeLe    DateTime  @default(now())
-  classe    Classe    @relation(fields: [classeId], references: [id])
+  id         String            @id @default(uuid())
+  classeId   String
+  date       DateTime
+  resume     String?
+  creePar    String? // Utilisateur.id
+  creeLe     DateTime          @default(now())
+  classe     Classe            @relation(fields: [classeId], references: [id])
   diffusions DiffusionResume[]
 
   @@unique([classeId, date]) // 1 résumé/jour/classe
@@ -201,28 +224,28 @@ model JournalDeClasse {
 }
 
 model DiffusionResume {
-  id              String   @id @default(uuid())
+  id              String            @id @default(uuid())
   journalClasseId String
   tuteurId        String
   canal           CanalNotification
-  statut          StatutDiffusion @default(AEnvoyer)
+  statut          StatutDiffusion   @default(AEnvoyer)
   envoyeLe        DateTime?
-  journal         JournalDeClasse @relation(fields: [journalClasseId], references: [id])
+  journal         JournalDeClasse   @relation(fields: [journalClasseId], references: [id])
 }
 
 model ProfilSante {
-  id         String @id @default(uuid())
-  enfantId   String @unique
-  medecin    String?
-  notes      String?
-  enfant        Enfant @relation(fields: [enfantId], references: [id])
+  id            String                   @id @default(uuid())
+  enfantId      String                   @unique
+  medecin       String?
+  notes         String?
+  enfant        Enfant                   @relation(fields: [enfantId], references: [id])
   vaccinations  Vaccination[]
   allergies     Allergie[]
   autorisations AutorisationMedicament[]
 }
 
 model Vaccination {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   profilSanteId String
   nom           String
   date          DateTime
@@ -231,7 +254,7 @@ model Vaccination {
 }
 
 model Allergie {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   profilSanteId String
   nom           String
   severite      String?
@@ -240,7 +263,7 @@ model Allergie {
 }
 
 model AutorisationMedicament {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   profilSanteId String
   medicament    String
   dosage        String?
@@ -250,14 +273,14 @@ model AutorisationMedicament {
 }
 
 model Facture {
-  id           String   @id @default(uuid())
+  id           String         @id @default(uuid())
   familleId    String
   dateEmission DateTime
   dateEcheance DateTime?
-  statut       String   @default("Brouillon")
-  devise       String   @default("MAD")
-  total        Decimal  @default(0)
-  famille      Famille @relation(fields: [familleId], references: [id])
+  statut       String         @default("Brouillon")
+  devise       String         @default("MAD")
+  total        Decimal        @default(0)
+  famille      Famille        @relation(fields: [familleId], references: [id])
   lignes       LigneFacture[]
   paiements    Paiement[]
 
@@ -275,25 +298,25 @@ model LigneFacture {
 }
 
 model Paiement {
-  id         String  @id @default(uuid())
-  factureId  String
-  montant    Decimal @default(0)
-  statut     String  @default("EnAttente")
-  methode    String?
+  id                   String    @id @default(uuid())
+  factureId            String
+  montant              Decimal   @default(0)
+  statut               String    @default("EnAttente")
+  methode              String?
   referenceFournisseur String?
-  payeLe     DateTime?
-  facture    Facture @relation(fields: [factureId], references: [id])
+  payeLe               DateTime?
+  facture              Facture   @relation(fields: [factureId], references: [id])
 }
 
 model EvenementCalendrier {
-  id         String   @id @default(uuid())
+  id         String              @id @default(uuid())
   classeId   String?
   titre      String
   debutA     DateTime
   finA       DateTime
   lieu       String?
   visibilite VisibiliteEvenement @default(Global)
-  classe     Classe?  @relation(fields: [classeId], references: [id])
+  classe     Classe?             @relation(fields: [classeId], references: [id])
 
   @@index([debutA])
 }
