@@ -167,5 +167,30 @@ export class UsersService {
       },
     });
   }
+
+  /**
+   * Supprimer un utilisateur
+   */
+  async deleteUser(userId: string) {
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: userId },
+    });
+
+    if (!utilisateur) {
+      throw new NotFoundException(`Utilisateur ${userId} non trouvé`);
+    }
+
+    // Supprimer l'utilisateur
+    await this.prisma.utilisateur.delete({
+      where: { id: userId },
+    });
+
+    this.logger.log(`Utilisateur ${userId} supprimé`);
+
+    return {
+      message: 'Utilisateur supprimé avec succès',
+      id: userId,
+    };
+  }
 }
 

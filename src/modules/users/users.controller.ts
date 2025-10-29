@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -174,6 +175,34 @@ export class UsersController {
     @Body() dto: UpdateUserStatusDto,
   ) {
     return this.usersService.updateStatus(id, dto);
+  }
+
+  /**
+   * Supprimer un utilisateur
+   */
+  @Delete(':id')
+  @Roles('ADMIN')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Supprimer un utilisateur',
+    description: 'Supprime un utilisateur (enseignant ou parent)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Utilisateur supprimé avec succès',
+    schema: {
+      example: {
+        message: 'Utilisateur supprimé avec succès',
+        id: 'usr_123',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Utilisateur non trouvé',
+  })
+  async deleteUser(@Param('id') id: string) {
+    return this.usersService.deleteUser(id);
   }
 }
 

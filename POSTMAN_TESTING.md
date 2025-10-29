@@ -55,7 +55,7 @@ Attendre: `Application successfully started`
      "password": "change_me"
    }
    ```
-3. Cliquer **Send**
+3. Cliquer **Send** 
 
 **Réponse (Status 200):**
 ```json
