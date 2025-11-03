@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SupabaseAdminService } from '../../common/services/supabase-admin.service';
+import { EmailService } from '../../common/services/email.service';
 import { CreateUserDto, InviteTeacherDto, UpdateUserStatusDto, ListUsersQueryDto } from './dto/create-user.dto';
 
 @Injectable()
@@ -15,12 +16,13 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private supabaseAdmin: SupabaseAdminService,
+    private emailService: EmailService,
   ) {}
 
   /**
    * Créer un utilisateur (enseignant ou parent)
    * Crée un Utilisateur avec le rôle spécifié et statut INVITED
-   * Envoie une invitation Supabase
+   * Envoie une invitation Supabase et un email
    */
   async createUser(dto: CreateUserDto) {
     // Vérifier si l'email existe déjà
@@ -35,6 +37,9 @@ export class UsersService {
     }
 
     try {
+      // Générer un mot de passe temporaire
+      const tempPassword = this.generateTempPassword();
+
       // Créer l'invitation Supabase
       const supabaseUser = await this.supabaseAdmin.createUserInvite(dto.email);
 
@@ -52,7 +57,16 @@ export class UsersService {
         },
       });
 
-      this.logger.log(`Utilisateur créé: ${utilisateur.email} (${utilisateur.role})`);
+      // Envoyer l'email d'invitation
+      await this.emailService.sendInvitationEmail(
+        utilisateur.email,
+        utilisateur.prenom,
+        utilisateur.nom,
+        utilisateur.role,
+        tempPassword,
+      );
+
+      this.logger.log(`Utilisateur créé et email envoyé: ${utilisateur.email} (${utilisateur.role})`);
 
       return {
         utilisateurId: utilisateur.id,
@@ -60,6 +74,7 @@ export class UsersService {
         role: utilisateur.role,
         statut: utilisateur.statut,
         invited: supabaseUser.invited,
+        emailSent: true,
       };
     } catch (error) {
       this.logger.error(`Erreur création utilisateur: ${error.message}`);
@@ -70,7 +85,7 @@ export class UsersService {
   /**
    * Inviter un enseignant
    * Crée un Utilisateur avec rôle ENSEIGNANT et statut INVITED
-   * Envoie une invitation Supabase
+   * Envoie une invitation Supabase et un email
    */
   async inviteTeacher(dto: InviteTeacherDto) {
     // Vérifier si l'email existe déjà
@@ -85,6 +100,9 @@ export class UsersService {
     }
 
     try {
+      // Générer un mot de passe temporaire
+      const tempPassword = this.generateTempPassword();
+
       // Créer l'invitation Supabase
       const supabaseUser = await this.supabaseAdmin.createUserInvite(dto.email);
 
@@ -102,13 +120,23 @@ export class UsersService {
         },
       });
 
-      this.logger.log(`Enseignant invité: ${utilisateur.email}`);
+      // Envoyer l'email d'invitation
+      await this.emailService.sendInvitationEmail(
+        utilisateur.email,
+        utilisateur.prenom,
+        utilisateur.nom,
+        'ENSEIGNANT',
+        tempPassword,
+      );
+
+      this.logger.log(`Enseignant invité et email envoyé: ${utilisateur.email}`);
 
       return {
         utilisateurId: utilisateur.id,
         email: utilisateur.email,
         statut: utilisateur.statut,
         invited: supabaseUser.invited,
+        emailSent: true,
       };
     } catch (error) {
       this.logger.error(`Erreur invitation enseignant: ${error.message}`);
@@ -241,6 +269,18 @@ export class UsersService {
       message: 'Utilisateur supprimé avec succès',
       id: userId,
     };
+  }
+
+  /**
+   * Générer un mot de passe temporaire
+   */
+  private generateTempPassword(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
   }
 }
 
