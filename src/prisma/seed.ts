@@ -11,6 +11,22 @@ async function main() {
   console.log('🌱 Seed: start');
 
   try {
+    // 0) Admin User
+    console.log('👤 Creating admin user...');
+    await prisma.utilisateur.upsert({
+      where: { email: 'admin@wlw.ma' },
+      update: {},
+      create: {
+        email: 'admin@wlw.ma',
+        prenom: 'Admin',
+        nom: 'System',
+        role: 'ADMIN',
+        statut: 'ACTIVE',
+        activeLe: new Date(),
+      },
+    });
+    console.log('✅ Admin user created');
+
     // 1) Classes
     console.log('📚 Creating classes...');
     const petiteSection = await prisma.classe.upsert({
