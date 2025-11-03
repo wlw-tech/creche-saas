@@ -19,25 +19,21 @@ export class EmailService {
   }
 
   private initializeTransporter() {
-    if (this.isDev) {
-      // En DEV, utiliser Ethereal Email (service de test gratuit)
-      this.logger.log('📧 Mode DEV: Emails affichés dans la console');
-      return;
-    }
-
-    // En PROD, utiliser les variables d'environnement
+    // Utiliser les variables d'environnement (DEV ou PROD)
     const smtpHost = this.configService.get('SMTP_HOST');
     const smtpPort = this.configService.get('SMTP_PORT');
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const smtpUser = this.configService.get('SMTP_USER');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const smtpPass = this.configService.get('SMTP_PASS');
 
     if (smtpHost && smtpPort && smtpUser && smtpPass) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       this.transporter = nodemailer.createTransport({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         host: smtpHost,
         port: parseInt(smtpPort),
-        secure: true,
+        secure: false, // Use TLS (not SSL)
         auth: {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           user: smtpUser,
@@ -45,7 +41,10 @@ export class EmailService {
           pass: smtpPass,
         },
       });
-      this.logger.log('📧 Service SMTP configuré');
+      this.logger.log('📧 Service SMTP configuré avec succès');
+      this.logger.log(`📧 Host: ${smtpHost}:${smtpPort}`);
+    } else {
+      this.logger.warn('⚠️ Variables SMTP non configurées - Mode console uniquement');
     }
   }
 
