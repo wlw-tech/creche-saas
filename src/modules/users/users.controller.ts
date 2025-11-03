@@ -23,6 +23,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import {
+  CreateUserDto,
   InviteTeacherDto,
   UpdateUserStatusDto,
   ListUsersQueryDto,
@@ -40,7 +41,39 @@ export class UsersController {
   constructor(private usersService: UsersService) {}
 
   /**
-   * Inviter un enseignant
+   * Créer un utilisateur (enseignant ou parent)
+   */
+  @Post()
+  @Roles('ADMIN')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Créer un utilisateur',
+    description:
+      'Crée un compte utilisateur (enseignant ou parent) et envoie une invitation par email',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Utilisateur créé avec succès',
+    schema: {
+      example: {
+        utilisateurId: 'usr_789',
+        email: 'prof@mail.com',
+        role: 'ENSEIGNANT',
+        statut: 'INVITED',
+        invited: true,
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Email déjà utilisé ou données invalides',
+  })
+  async createUser(@Body() dto: CreateUserDto) {
+    return this.usersService.createUser(dto);
+  }
+
+  /**
+   * Inviter un enseignant (legacy)
    */
   @Post('teachers/invite')
   @Roles('ADMIN')
@@ -48,7 +81,7 @@ export class UsersController {
   @ApiOperation({
     summary: 'Inviter un enseignant',
     description:
-      'Crée un compte enseignant et envoie une invitation par email',
+      'Crée un compte enseignant et envoie une invitation par email (legacy)',
   })
   @ApiResponse({
     status: 201,

@@ -1,9 +1,56 @@
-import { IsEmail, IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsEmail, IsString, IsOptional, IsEnum, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { RoleUtilisateur } from '@prisma/client';
 
 /**
- * DTO pour inviter un enseignant
+ * DTO pour créer un utilisateur (enseignant ou parent)
+ */
+export class CreateUserDto {
+  @ApiProperty({
+    example: 'prof@wlw.ma',
+    description: 'Email de l\'utilisateur',
+  })
+  @IsEmail({}, { message: 'Email invalide' })
+  email: string;
+
+  @ApiProperty({
+    example: 'Ahmed',
+    description: 'Prénom',
+  })
+  @IsString()
+  @MinLength(2, { message: 'Le prénom doit contenir au moins 2 caractères' })
+  prenom: string;
+
+  @ApiProperty({
+    example: 'Dupont',
+    description: 'Nom',
+  })
+  @IsString()
+  @MinLength(2, { message: 'Le nom doit contenir au moins 2 caractères' })
+  nom: string;
+
+  @ApiProperty({
+    example: 'ENSEIGNANT',
+    description: 'Rôle de l\'utilisateur',
+    enum: ['ENSEIGNANT', 'PARENT'],
+  })
+  @IsEnum(['ENSEIGNANT', 'PARENT'], {
+    message: 'Le rôle doit être ENSEIGNANT ou PARENT',
+  })
+  role: string;
+
+  @ApiProperty({
+    example: '+212612345678',
+    description: 'Téléphone (optionnel)',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  telephone?: string;
+}
+
+/**
+ * DTO pour inviter un enseignant (legacy - utilise CreateUserDto maintenant)
  */
 export class InviteTeacherDto {
   @ApiProperty({

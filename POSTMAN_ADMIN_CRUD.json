@@ -1,0 +1,281 @@
+{
+  "info": {
+    "name": "Crèche API - Admin CRUD Complet",
+    "description": "Collection complète pour tester tous les endpoints CRUD admin",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1️⃣ AUTH - Login Admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@wlw.ma\",\n  \"password\": \"change_me\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2️⃣ CREATE - Créer Enseignant",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"teacher1@wlw.ma\",\n  \"prenom\": \"Ahmed\",\n  \"nom\": \"Bennani\",\n  \"role\": \"ENSEIGNANT\",\n  \"telephone\": \"+212612345678\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/users",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3️⃣ CREATE - Créer Parent",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"parent1@wlw.ma\",\n  \"prenom\": \"Fatima\",\n  \"nom\": \"Alaoui\",\n  \"role\": \"PARENT\",\n  \"telephone\": \"+212612345679\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/users",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4️⃣ READ - Lister tous les utilisateurs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/users?page=1&limit=10",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5️⃣ READ - Lister enseignants",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/users?role=ENSEIGNANT&page=1&limit=10",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            {
+              "key": "role",
+              "value": "ENSEIGNANT"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6️⃣ READ - Lister parents",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/users?role=PARENT&page=1&limit=10",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            {
+              "key": "role",
+              "value": "PARENT"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7️⃣ READ - Obtenir utilisateur par ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/users/{{userId}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users", "{{userId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8️⃣ UPDATE - Activer utilisateur",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"statut\": \"ACTIVE\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/users/{{userId}}/status",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users", "{{userId}}", "status"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "9️⃣ UPDATE - Désactiver utilisateur",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"statut\": \"DISABLED\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/users/{{userId}}/status",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users", "{{userId}}", "status"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "🔟 DELETE - Supprimer utilisateur",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/users/{{userId}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users", "{{userId}}"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
+

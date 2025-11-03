@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SupabaseAdminService } from '../../common/services/supabase-admin.service';
-import { InviteTeacherDto, UpdateUserStatusDto, ListUsersQueryDto } from './dto/create-user.dto';
+import { CreateUserDto, InviteTeacherDto, UpdateUserStatusDto, ListUsersQueryDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +16,56 @@ export class UsersService {
     private prisma: PrismaService,
     private supabaseAdmin: SupabaseAdminService,
   ) {}
+
+  /**
+   * Créer un utilisateur (enseignant ou parent)
+   * Crée un Utilisateur avec le rôle spécifié et statut INVITED
+   * Envoie une invitation Supabase
+   */
+  async createUser(dto: CreateUserDto) {
+    // Vérifier si l'email existe déjà
+    const existing = await this.prisma.utilisateur.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existing) {
+      throw new BadRequestException(
+        `Un utilisateur avec l'email ${dto.email} existe déjà`,
+      );
+    }
+
+    try {
+      // Créer l'invitation Supabase
+      const supabaseUser = await this.supabaseAdmin.createUserInvite(dto.email);
+
+      // Créer l'utilisateur local
+      const utilisateur = await this.prisma.utilisateur.create({
+        data: {
+          email: dto.email,
+          prenom: dto.prenom,
+          nom: dto.nom,
+          telephone: dto.telephone,
+          role: dto.role as any,
+          statut: 'INVITED',
+          authUserId: supabaseUser.userId,
+          inviteLe: new Date(),
+        },
+      });
+
+      this.logger.log(`Utilisateur créé: ${utilisateur.email} (${utilisateur.role})`);
+
+      return {
+        utilisateurId: utilisateur.id,
+        email: utilisateur.email,
+        role: utilisateur.role,
+        statut: utilisateur.statut,
+        invited: supabaseUser.invited,
+      };
+    } catch (error) {
+      this.logger.error(`Erreur création utilisateur: ${error.message}`);
+      throw error;
+    }
+  }
 
   /**
    * Inviter un enseignant
