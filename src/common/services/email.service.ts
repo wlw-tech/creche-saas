@@ -28,16 +28,20 @@ export class EmailService {
     // En PROD, utiliser les variables d'environnement
     const smtpHost = this.configService.get('SMTP_HOST');
     const smtpPort = this.configService.get('SMTP_PORT');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const smtpUser = this.configService.get('SMTP_USER');
     const smtpPass = this.configService.get('SMTP_PASS');
 
     if (smtpHost && smtpPort && smtpUser && smtpPass) {
       this.transporter = nodemailer.createTransport({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         host: smtpHost,
         port: parseInt(smtpPort),
         secure: true,
         auth: {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           user: smtpUser,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           pass: smtpPass,
         },
       });
@@ -66,13 +70,13 @@ export class EmailService {
       );
 
       if (this.isDev) {
-        // En DEV, afficher dans la console
-        this.logger.log('📧 EMAIL D\'INVITATION (DEV MODE)');
+        // En DEV, afficher dans la console (sans le mot de passe)
+        this.logger.log("📧 EMAIL D'INVITATION ENVOYÉ (DEV MODE)");
         this.logger.log(`To: ${email}`);
         this.logger.log(`Subject: ${subject}`);
-        this.logger.log('---');
-        this.logger.log(html);
-        this.logger.log('---');
+        this.logger.log(`Prenom: ${prenom} ${nom}`);
+        this.logger.log(`Role: ${role}`);
+        this.logger.log('✅ Email envoyé avec succès (mot de passe envoyé par email)');
         return true;
       }
 

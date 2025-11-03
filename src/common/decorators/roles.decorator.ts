@@ -22,4 +22,3 @@ export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
  */
 export const AllowedStatuses = (...statuses: string[]) =>
   SetMetadata('allowedStatuses', statuses);
-
