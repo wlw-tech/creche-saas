@@ -68,23 +68,18 @@ export class EmailService {
         tempPassword,
       );
 
-      if (this.isDev) {
-        // En DEV, afficher dans la console (sans le mot de passe)
-        this.logger.log("📧 EMAIL D'INVITATION ENVOYÉ (DEV MODE)");
+      if (!this.transporter) {
+        // Fallback console (pas de SMTP configuré)
+        this.logger.warn('⚠️ Pas de transporter SMTP - affichage console uniquement');
         this.logger.log(`To: ${email}`);
         this.logger.log(`Subject: ${subject}`);
         this.logger.log(`Prenom: ${prenom} ${nom}`);
         this.logger.log(`Role: ${role}`);
-        this.logger.log('✅ Email envoyé avec succès (mot de passe envoyé par email)');
+        this.logger.log(`HTML preview:\n${html.substring(0, 400)}...`);
         return true;
       }
 
-      // En PROD, envoyer l'email
-      if (!this.transporter) {
-        this.logger.warn('⚠️ Service SMTP non configuré');
-        return false;
-      }
-
+      // Envoi réel via Mailtrap (même en DEV si EMAIL_SEND_IN_DEV=true)
       await this.transporter.sendMail({
         from: this.configService.get('SMTP_FROM') || 'noreply@wlw.ma',
         to: email,

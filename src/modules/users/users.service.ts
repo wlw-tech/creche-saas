@@ -53,6 +53,7 @@ export class UsersService {
           role: dto.role as any,
           statut: 'INVITED',
           authUserId: supabaseUser.userId,
+          tempPassword: tempPassword,
           inviteLe: new Date(),
         },
       });
@@ -116,6 +117,7 @@ export class UsersService {
           role: 'ENSEIGNANT',
           statut: 'INVITED',
           authUserId: supabaseUser.userId,
+          tempPassword: tempPassword,
           inviteLe: new Date(),
         },
       });

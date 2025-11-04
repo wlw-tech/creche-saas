@@ -105,6 +105,7 @@ model Utilisateur {
   authUserId   String?           @unique // Supabase auth.users.id
   tuteurId     String?           @unique // Lien vers Tuteur si PARENT
   enseignantId String?           @unique // Lien vers Enseignant si TEACHER (futur)
+  tempPassword String?           // Mot de passe temporaire pour la première connexion
   inviteLe     DateTime?
   activeLe     DateTime?
   dernierAcces DateTime?

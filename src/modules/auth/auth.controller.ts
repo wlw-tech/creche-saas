@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import * as jwt from 'jsonwebtoken';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
+import { PrismaService } from '../../prisma/prisma.service';
 
 /**
  * Contrôleur d'authentification
@@ -26,7 +27,10 @@ export class AuthController {
   private readonly adminPassword: string;
   private readonly jwtSecret: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService,
+  ) {
     this.isDev = this.configService.get('NODE_ENV') !== 'production';
     this.adminEmail = this.configService.get('ADMIN_EMAIL', 'admin@wlw.ma');
     this.adminPassword = this.configService.get('ADMIN_PASSWORD', 'change_me');
@@ -85,6 +89,70 @@ export class AuthController {
       userId: 'admin_dev',
       role: 'ADMIN',
       email: this.adminEmail,
+    };
+  }
+
+  /**
+   * Connexion utilisateur (enseignant/parent)
+   * Accepte email et mot de passe temporaire
+   */
+  @Post('login-user')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Connexion utilisateur (enseignant/parent)',
+    description: 'Connexion pour les utilisateurs créés par l\'admin',
+  })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Connexion réussie',
+    type: LoginResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Identifiants invalides',
+  })
+  async loginUser(@Body() dto: LoginDto): Promise<LoginResponseDto> {
+    if (!this.isDev) {
+      throw new BadRequestException(
+        'Endpoint non disponible en production. Utiliser Supabase Auth.',
+      );
+    }
+
+    // Chercher l'utilisateur dans la base de données
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (!utilisateur) {
+      this.logger.warn(`Tentative de connexion échouée: ${dto.email} (utilisateur non trouvé)`);
+      throw new BadRequestException('Email ou mot de passe incorrect');
+    }
+
+    // Vérifier le mot de passe temporaire
+    if (utilisateur.tempPassword !== dto.password) {
+      this.logger.warn(`Tentative de connexion échouée: ${dto.email} (mot de passe incorrect)`);
+      throw new BadRequestException('Email ou mot de passe incorrect');
+    }
+
+    this.logger.log(`Utilisateur connecté: ${dto.email} (${utilisateur.role})`);
+
+    // Générer un JWT
+    const token = jwt.sign(
+      {
+        email: utilisateur.email,
+        role: utilisateur.role,
+        userId: utilisateur.id,
+      },
+      this.jwtSecret,
+      { expiresIn: '24h' },
+    );
+
+    return {
+      accessToken: token,
+      userId: utilisateur.id,
+      role: utilisateur.role,
+      email: utilisateur.email,
     };
   }
 
