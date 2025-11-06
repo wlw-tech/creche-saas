@@ -81,6 +81,43 @@ enum VisibiliteEvenement {
   Prive
 }
 
+enum StatutMenu {
+  Brouillon
+  Publie
+}
+
+enum NiveauAppetit {
+  Excellent
+  Bon
+  Moyen
+  Faible
+  Refus
+}
+
+enum NiveauHumeur {
+  Excellent
+  Bon
+  Moyen
+  Difficile
+  Tres_difficile
+}
+
+enum NiveauSieste {
+  Excellent
+  Bon
+  Moyen
+  Difficile
+  Pas_de_sieste
+}
+
+enum NiveauParticipation {
+  Excellent
+  Bon
+  Moyen
+  Faible
+  Absent
+}
+
 // ---------- MODELS (MVP mono-centre) ----------
 model Classe {
   id             String                @id @default(uuid())
@@ -91,6 +128,8 @@ model Classe {
   inscriptions   Inscription[]
   journauxClasse JournalDeClasse[]
   evenements     EvenementCalendrier[]
+  enseignants    EnseignantClasse[]
+  dailySummaries ClassDailySummary[]
 }
 
 model Utilisateur {
@@ -113,10 +152,32 @@ model Utilisateur {
   modifieLe    DateTime          @updatedAt
 
   tuteur Tuteur? @relation(fields: [tuteurId], references: [id])
+  enseignant Enseignant? @relation(fields: [enseignantId], references: [id])
 
   @@index([role])
   @@index([statut])
   @@index([email])
+}
+
+model Enseignant {
+  id       String             @id @default(uuid())
+  utilisateur Utilisateur?
+  classes  EnseignantClasse[]
+}
+
+model EnseignantClasse {
+  id           String   @id @default(uuid())
+  enseignantId String
+  classeId     String
+  dateDebut    DateTime @default(now())
+  dateFin      DateTime?
+
+  enseignant Enseignant @relation(fields: [enseignantId], references: [id])
+  classe     Classe     @relation(fields: [classeId], references: [id])
+
+  @@unique([enseignantId, classeId])
+  @@index([enseignantId])
+  @@index([classeId])
 }
 
 model Famille {
@@ -155,6 +216,7 @@ model Enfant {
   presences     Presence[]
   journaux      JournalQuotidien[]
   profilSante   ProfilSante?
+  dailyResumes  DailyResume[]
 }
 
 model Inscription {
@@ -320,4 +382,87 @@ model EvenementCalendrier {
   classe     Classe?             @relation(fields: [classeId], references: [id])
 
   @@index([debutA])
+}
+
+model Menu {
+  id           String       @id @default(uuid())
+  date         DateTime     @unique // Une date = un menu unique
+  entree       String?      // Plat d'entrée
+  plat         String?      // Plat principal
+  dessert      String?      // Dessert
+  statut       StatutMenu   @default(Brouillon) // Brouillon ou Publié
+  allergenes   MenuAllergen[] // Liste des allergènes
+  creePar      String?      // Utilisateur.id (admin)
+  creeLe       DateTime     @default(now())
+  modifieLe    DateTime     @updatedAt
+  publieLe     DateTime?    // Date de publication
+
+  @@index([date])
+  @@index([statut])
+}
+
+model MenuAllergen {
+  id       String @id @default(uuid())
+  menuId   String
+  allergen String // Nom de l'allergène (ex: "Arachides", "Gluten", "Lait")
+  menu     Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@unique([menuId, allergen])
+  @@index([menuId])
+}
+
+// ---------- DAILY RESUME (Résumé quotidien des enfants) ----------
+model DailyResume {
+  id             String                    @id @default(uuid())
+  enfantId       String
+  enfant         Enfant                    @relation(fields: [enfantId], references: [id], onDelete: Cascade)
+  date           DateTime                  // Date du résumé
+  appetit        NiveauAppetit?            // Niveau d'appétit
+  humeur         NiveauHumeur?             // Humeur de l'enfant
+  sieste         NiveauSieste?             // Qualité de la sieste
+  participation  NiveauParticipation?      // Participation aux activités
+  observations   DailyResumeObservation[]  // Observations détaillées
+  creePar        String?                   // Utilisateur.id (enseignant)
+  creeLe         DateTime                  @default(now())
+  modifieLe      DateTime                  @updatedAt
+
+  @@unique([enfantId, date])
+  @@index([date])
+  @@index([enfantId])
+}
+
+model DailyResumeObservation {
+  id            String       @id @default(uuid())
+  dailyResumeId String
+  dailyResume   DailyResume  @relation(fields: [dailyResumeId], references: [id], onDelete: Cascade)
+  observation   String       // Texte de l'observation
+  creeLe        DateTime     @default(now())
+
+  @@index([dailyResumeId])
+}
+
+// Résumé collectif de la journée par classe
+model ClassDailySummary {
+  id            String    @id @default(uuid())
+  classeId      String
+  classe        Classe    @relation(fields: [classeId], references: [id], onDelete: Cascade)
+  date          DateTime  // Date du résumé
+  activites     String    // Activités du jour
+  apprentissages String   // Apprentissages du jour
+  humeurGroupe  String    // Humeur générale du groupe
+  observations  String?   // Observations supplémentaires
+  statut        StatutResume @default(Brouillon) // Brouillon ou Publie
+  creePar       String?   // Utilisateur.id (enseignant)
+  creeLe        DateTime  @default(now())
+  modifieLe     DateTime  @updatedAt
+  publieLe      DateTime? // Date de publication
+
+  @@unique([classeId, date])
+  @@index([date])
+  @@index([classeId])
+}
+
+enum StatutResume {
+  Brouillon
+  Publie
 }

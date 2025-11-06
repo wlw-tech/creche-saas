@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsOptional, IsEnum, MinLength } from 'class-validator';
+import { IsEmail, IsString, IsOptional, IsEnum, MinLength, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { RoleUtilisateur } from '@prisma/client';
 
@@ -151,3 +151,23 @@ export class ListUsersQueryDto {
   limit?: number;
 }
 
+/**
+ * DTO pour assigner un enseignant à une classe
+ */
+export class AssignTeacherToClassDto {
+  @ApiProperty({
+    example: 'usr_123',
+    description: 'ID de l\'utilisateur enseignant',
+  })
+  @IsString()
+  @IsNotEmpty()
+  utilisateurId: string;
+
+  @ApiProperty({
+    example: 'cls_456',
+    description: 'ID de la classe',
+  })
+  @IsString()
+  @IsNotEmpty()
+  classeId: string;
+}

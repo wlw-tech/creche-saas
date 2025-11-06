@@ -6,12 +6,15 @@ import {
   HttpStatus,
   BadRequestException,
   Logger,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import * as jwt from 'jsonwebtoken';
-import { LoginDto, LoginResponseDto } from './dto/login.dto';
+import { LoginDto, LoginResponseDto, ChangePasswordDto, ChangePasswordResponseDto } from './dto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 /**
  * Contrôleur d'authentification
@@ -129,8 +132,28 @@ export class AuthController {
       throw new BadRequestException('Email ou mot de passe incorrect');
     }
 
-    // Vérifier le mot de passe temporaire
-    if (utilisateur.tempPassword !== dto.password) {
+    // DEBUG: Afficher les informations
+    this.logger.log(`🔍 DEBUG - Email: ${dto.email}`);
+    this.logger.log(`🔍 DEBUG - Utilisateur trouvé: ${utilisateur.email}`);
+    this.logger.log(`🔍 DEBUG - tempPassword stocké: ${utilisateur.tempPassword ? '✅ OUI' : '❌ NULL'}`);
+    this.logger.log(`🔍 DEBUG - Mot de passe fourni: ${dto.password}`);
+    if (utilisateur.tempPassword) {
+      this.logger.log(`🔍 DEBUG - tempPassword EXACT: "${utilisateur.tempPassword}"`);
+      this.logger.log(`🔍 DEBUG - password EXACT: "${dto.password}"`);
+      this.logger.log(`🔍 DEBUG - Longueur tempPassword: ${utilisateur.tempPassword.length}`);
+      this.logger.log(`🔍 DEBUG - Longueur mot de passe fourni: ${dto.password.length}`);
+      this.logger.log(`🔍 DEBUG - Correspondance: ${utilisateur.tempPassword === dto.password ? '✅ OUI' : '❌ NON'}`);
+
+      // Afficher les codes ASCII pour chaque caractère
+      this.logger.log(`🔍 DEBUG - tempPassword codes: ${Array.from(utilisateur.tempPassword).map(c => c.charCodeAt(0)).join(',')}`);
+      this.logger.log(`🔍 DEBUG - password codes: ${Array.from(dto.password).map(c => c.charCodeAt(0)).join(',')}`);
+    }
+
+    // Vérifier le mot de passe temporaire (avec trim pour éviter les espaces)
+    const storedPassword = utilisateur.tempPassword?.trim() || '';
+    const providedPassword = dto.password?.trim() || '';
+
+    if (storedPassword !== providedPassword) {
       this.logger.warn(`Tentative de connexion échouée: ${dto.email} (mot de passe incorrect)`);
       throw new BadRequestException('Email ou mot de passe incorrect');
     }
@@ -153,6 +176,76 @@ export class AuthController {
       userId: utilisateur.id,
       role: utilisateur.role,
       email: utilisateur.email,
+    };
+  }
+
+  /**
+   * Changer le mot de passe
+   */
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Changer le mot de passe',
+    description: 'Permet à un utilisateur authentifié de changer son mot de passe',
+  })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Mot de passe changé avec succès',
+    type: ChangePasswordResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Ancien mot de passe incorrect ou validation échouée',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Non authentifié',
+  })
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @Req() req: any,
+  ): Promise<ChangePasswordResponseDto> {
+    const user = req.user;
+
+    // Vérifier que les mots de passe correspondent
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException('Les mots de passe ne correspondent pas');
+    }
+
+    // Récupérer l'utilisateur
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: user.userId },
+    });
+
+    if (!utilisateur) {
+      throw new BadRequestException('Utilisateur non trouvé');
+    }
+
+    // Vérifier l'ancien mot de passe
+    // TODO: Implémenter le hachage des mots de passe avec bcrypt
+    // Pour maintenant, on compare directement (à ne pas faire en production!)
+    if (utilisateur.tempPassword !== dto.oldPassword) {
+      this.logger.warn(`Tentative de changement de mot de passe échouée: ${user.email} (ancien mot de passe incorrect)`);
+      throw new BadRequestException('Ancien mot de passe incorrect');
+    }
+
+    // Mettre à jour le mot de passe
+    await this.prisma.utilisateur.update({
+      where: { id: user.userId },
+      data: {
+        tempPassword: dto.newPassword,
+        activeLe: new Date(),
+      },
+    });
+
+    this.logger.log(`Mot de passe changé: ${user.email}`);
+
+    return {
+      success: true,
+      message: 'Mot de passe changé avec succès',
     };
   }
 

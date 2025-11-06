@@ -274,6 +274,84 @@ export class UsersService {
   }
 
   /**
+   * Assigner un enseignant à une classe
+   */
+  async assignTeacherToClass(utilisateurId: string, classeId: string) {
+    // Vérifier que l'utilisateur existe et est un enseignant
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: utilisateurId },
+      include: { enseignant: true },
+    });
+
+    if (!utilisateur) {
+      throw new NotFoundException(`Utilisateur ${utilisateurId} non trouvé`);
+    }
+
+    if (utilisateur.role !== 'ENSEIGNANT') {
+      throw new BadRequestException('L\'utilisateur doit être un enseignant');
+    }
+
+    // Vérifier que la classe existe
+    const classe = await this.prisma.classe.findUnique({
+      where: { id: classeId },
+    });
+
+    if (!classe) {
+      throw new NotFoundException(`Classe ${classeId} non trouvée`);
+    }
+
+    // Créer l'Enseignant s'il n'existe pas
+    let enseignant = utilisateur.enseignant;
+    if (!enseignant) {
+      enseignant = await this.prisma.enseignant.create({
+        data: {
+          utilisateur: {
+            connect: { id: utilisateurId },
+          },
+        },
+      });
+
+      // Mettre à jour l'utilisateur avec l'enseignantId
+      await this.prisma.utilisateur.update({
+        where: { id: utilisateurId },
+        data: { enseignantId: enseignant.id },
+      });
+    }
+
+    // Assigner la classe
+    const assignment = await this.prisma.enseignantClasse.upsert({
+      where: {
+        enseignantId_classeId: {
+          enseignantId: enseignant.id,
+          classeId,
+        },
+      },
+      create: {
+        enseignantId: enseignant.id,
+        classeId,
+      },
+      update: {
+        dateFin: null, // Réactiver si désactivé
+      },
+      include: {
+        classe: true,
+      },
+    });
+
+    this.logger.log(
+      `Enseignant ${utilisateur.email} assigné à la classe ${classe.nom}`,
+    );
+
+    return {
+      message: 'Enseignant assigné à la classe avec succès',
+      enseignantId: enseignant.id,
+      utilisateurId,
+      classeId,
+      classe: assignment.classe,
+    };
+  }
+
+  /**
    * Générer un mot de passe temporaire
    */
   private generateTempPassword(): string {

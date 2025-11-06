@@ -27,6 +27,7 @@ import {
   InviteTeacherDto,
   UpdateUserStatusDto,
   ListUsersQueryDto,
+  AssignTeacherToClassDto,
 } from './dto/create-user.dto';
 
 /**
@@ -208,6 +209,47 @@ export class UsersController {
     @Body() dto: UpdateUserStatusDto,
   ) {
     return this.usersService.updateStatus(id, dto);
+  }
+
+  /**
+   * Assigner un enseignant à une classe
+   */
+  @Post('teachers/:utilisateurId/assign-class')
+  @Roles('ADMIN')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Assigner un enseignant à une classe',
+    description: 'Assigne un enseignant à une classe pour qu\'il puisse enregistrer les présences',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Enseignant assigné à la classe avec succès',
+    schema: {
+      example: {
+        message: 'Enseignant assigné à la classe avec succès',
+        enseignantId: 'ens_123',
+        utilisateurId: 'usr_456',
+        classeId: 'cls_789',
+        classe: {
+          id: 'cls_789',
+          nom: 'Petite Section',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'L\'utilisateur n\'est pas un enseignant',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Utilisateur ou classe non trouvé',
+  })
+  async assignTeacherToClass(
+    @Param('utilisateurId') utilisateurId: string,
+    @Body() dto: AssignTeacherToClassDto,
+  ) {
+    return this.usersService.assignTeacherToClass(utilisateurId, dto.classeId);
   }
 
   /**
