@@ -288,5 +288,130 @@ export class ParentService {
       },
     };
   }
+
+  /**
+   * Récupère le menu du jour
+   */
+  async getClassMenuOfDay(utilisateurId: string, classeId: string, date?: string) {
+    // Vérifier que l'utilisateur a un enfant dans cette classe
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: utilisateurId },
+      include: {
+        tuteur: {
+          include: {
+            famille: {
+              include: {
+                enfants: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!utilisateur?.tuteur) {
+      throw new NotFoundException('Tuteur non trouvé');
+    }
+
+    const hasChildInClass = utilisateur.tuteur.famille.enfants.some((e) => e.classeId === classeId);
+    if (!hasChildInClass) {
+      throw new ForbiddenException('Vous n\'avez pas d\'enfant dans cette classe');
+    }
+
+    const targetDate = date ? new Date(date) : new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const menu = await this.prisma.menu.findFirst({
+      where: {
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        statut: 'Publie',
+      },
+    });
+
+    if (!menu) {
+      throw new NotFoundException('Aucun menu publié pour cette date');
+    }
+
+    return {
+      id: menu.id,
+      date: menu.date,
+      entree: menu.entree,
+      plat: menu.plat,
+      dessert: menu.dessert,
+      statut: menu.statut,
+      publieLe: menu.publieLe,
+    };
+  }
+
+  /**
+   * Récupère le résumé quotidien d'un enfant
+   */
+  async getChildDailyResume(utilisateurId: string, enfantId: string, date?: string) {
+    // Vérifier que l'enfant appartient au tuteur
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id: utilisateurId },
+      include: {
+        tuteur: {
+          include: {
+            famille: {
+              include: {
+                enfants: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!utilisateur?.tuteur) {
+      throw new NotFoundException('Tuteur non trouvé');
+    }
+
+    const enfantBelongsToTuteur = utilisateur.tuteur.famille.enfants.some((e) => e.id === enfantId);
+    if (!enfantBelongsToTuteur) {
+      throw new ForbiddenException('Cet enfant ne vous appartient pas');
+    }
+
+    const targetDate = date ? new Date(date) : new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const resume = await this.prisma.dailyResume.findFirst({
+      where: {
+        enfantId,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      include: {
+        observations: true,
+      },
+    });
+
+    if (!resume) {
+      throw new NotFoundException('Aucun résumé trouvé pour cette date');
+    }
+
+    return {
+      id: resume.id,
+      date: resume.date,
+      humeur: resume.humeur,
+      appetit: resume.appetit,
+      sieste: resume.sieste,
+      participation: resume.participation,
+      observations: resume.observations.map((o) => o.observation),
+      creeLe: resume.creeLe,
+      modifieLe: resume.modifieLe,
+    };
+  }
 }
 

@@ -180,5 +180,59 @@ export class ParentController {
   async getMyEvents(@Req() req: any, @Query() query: GetEventsQueryDto) {
     return this.parentService.getMyEvents(req.user.userId, query);
   }
+
+  @Get('classes/:classeId/menu')
+  @ApiOperation({ summary: 'Récupérer le menu du jour d\'une classe' })
+  @ApiResponse({
+    status: 200,
+    description: 'Menu du jour publié',
+    schema: {
+      example: {
+        id: 'menu_1',
+        date: '2025-11-09',
+        petit_dejeuner: 'Lait, pain, beurre',
+        collation_matin: 'Fruit',
+        dejeuner: 'Poulet, riz, légumes',
+        collation_apres_midi: 'Yaourt',
+        gouter: 'Gâteau, jus',
+        notes: 'Aucune allergie',
+        publieLe: '2025-11-09T08:00:00Z',
+      },
+    },
+  })
+  async getClassMenu(
+    @Req() req: any,
+    @Param('classeId') classeId: string,
+    @Query('date') date?: string,
+  ) {
+    return this.parentService.getClassMenuOfDay(req.user.userId, classeId, date);
+  }
+
+  @Get('enfants/:enfantId/resume')
+  @ApiOperation({ summary: 'Récupérer le résumé quotidien de mon enfant' })
+  @ApiResponse({
+    status: 200,
+    description: 'Résumé du jour publié',
+    schema: {
+      example: {
+        id: 'resume_1',
+        date: '2025-11-09',
+        humeur: 'Excellent',
+        appetit: 'Bon',
+        sieste: 'Excellent',
+        participation: 'Excellent',
+        activites: 'Jeux libres, peinture, chansons',
+        observations: 'Très actif et joyeux',
+        publieLe: '2025-11-09T17:00:00Z',
+      },
+    },
+  })
+  async getChildResume(
+    @Req() req: any,
+    @Param('enfantId') enfantId: string,
+    @Query('date') date?: string,
+  ) {
+    return this.parentService.getChildDailyResume(req.user.userId, enfantId, date);
+  }
 }
 
