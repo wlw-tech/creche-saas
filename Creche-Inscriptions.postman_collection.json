@@ -27,7 +27,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"enfant\": {\n    \"prenom\": \"Mohammed Amine\",\n    \"nom\": \"Bennani\",\n    \"dateNaissance\": \"2022-06-14\"\n  },\n  \"mere\": {\n    \"prenom\": \"Sara\",\n    \"nom\": \"El Idrissi\",\n    \"email\": \"sara@mail.com\",\n    \"telephone\": \"+212612345678\"\n  },\n  \"pere\": {\n    \"prenom\": \"Youssef\",\n    \"nom\": \"Bennani\",\n    \"email\": \"youssef@mail.com\",\n    \"telephone\": \"+212687654321\"\n  },\n  \"personnesAutorisees\": [\n    {\n      \"prenom\": \"Grand-mère\",\n      \"nom\": \"Bennani\",\n      \"telephone\": \"+212611111111\"\n    }\n  ],\n  \"sante\": {\n    \"allergies\": \"Arachides\",\n    \"medicaments\": \"Aucun\",\n    \"observations\": \"Aucune\"\n  },\n  \"reglementAccepte\": true\n}"
+              "raw": "{\n  \"famille\": {\n    \"emailPrincipal\": \"sara@mail.com\",\n    \"languePreferee\": \"fr\",\n    \"adresseFacturation\": \"Rue Atlas, Marrakech\"\n  },\n  \"tuteurs\": [\n    {\n      \"lien\": \"Mere\",\n      \"prenom\": \"Sara\",\n      \"nom\": \"El Idrissi\",\n      \"email\": \"sara@mail.com\",\n      \"telephone\": \"+212612345678\",\n      \"principal\": true\n    },\n    {\n      \"lien\": \"Pere\",\n      \"prenom\": \"Youssef\",\n      \"nom\": \"Bennani\",\n      \"email\": \"youssef@mail.com\",\n      \"telephone\": \"+212687654321\",\n      \"principal\": false\n    },\n    {\n      \"lien\": \"Proche\",\n      \"prenom\": \"Grand-mère\",\n      \"nom\": \"Bennani\",\n      \"telephone\": \"+212611111111\",\n      \"principal\": false\n    }\n  ],\n  \"enfant\": {\n    \"prenom\": \"Mohammed Amine\",\n    \"nom\": \"Bennani\",\n    \"dateNaissance\": \"2022-06-14\",\n    \"genre\": \"M\"\n  },\n  \"classeIdSouhaitee\": \"{{classe_id}}\",\n  \"consentements\": {\n    \"photo\": true,\n    \"sortie\": true\n  },\n  \"commentaire\": \"Allergie aux arachides, aucun médicament\"\n}"
             }
           }
         }
@@ -158,15 +158,23 @@
           }
         },
         {
-          "name": "Accepter et provisionner",
+          "name": "Accepter et provisionner (envoie email)",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Accepté - Bienvenue à la crèche!\"\n}"
+            },
             "url": {
               "raw": "http://localhost:3000/api/admin/inscriptions/{{inscriptionId}}/accept",
               "protocol": "http",
@@ -187,6 +195,11 @@
     },
     {
       "key": "inscriptionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "classe_id",
       "value": "",
       "type": "string"
     }
