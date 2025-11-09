@@ -6,6 +6,7 @@ import { InscriptionsAcceptService } from './inscriptions-accept.service';
 import { InscriptionsAcceptController } from './inscriptions-accept.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { SupabaseAdminService } from '../../common/services/supabase-admin.service';
+import { EmailService } from '../../common/services/email.service';
 
 /**
  * Module pour les inscriptions (publiques et admin)
@@ -13,7 +14,7 @@ import { SupabaseAdminService } from '../../common/services/supabase-admin.servi
 @Module({
   imports: [PrismaModule],
   controllers: [InscriptionsController, InscriptionsAdminController, InscriptionsAcceptController],
-  providers: [InscriptionsService, InscriptionsAcceptService, SupabaseAdminService],
+  providers: [InscriptionsService, InscriptionsAcceptService, SupabaseAdminService, EmailService],
   exports: [InscriptionsService, InscriptionsAcceptService],
 })
 export class InscriptionsModule {}

@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateInscriptionDto, ListInscriptionsQueryDto, UpdateInscriptionStatusDto } from './dto/create-inscription.dto';
+import { EmailService } from '../../common/services/email.service';
+import { SupabaseAdminService } from '../../common/services/supabase-admin.service';
 
 /**
  * Service pour gérer les inscriptions publiques
@@ -16,7 +18,11 @@ import { CreateInscriptionDto, ListInscriptionsQueryDto, UpdateInscriptionStatus
 export class InscriptionsService {
   private readonly logger = new Logger(InscriptionsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+    private supabaseAdmin: SupabaseAdminService,
+  ) {}
 
   /**
    * Crée une nouvelle inscription (candidature)
@@ -214,7 +220,20 @@ export class InscriptionsService {
   }
 
   /**
+   * Générer un mot de passe temporaire
+   */
+  private generateTempPassword(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
+
+  /**
    * Accepter et provisionner une inscription
+   * Crée Famille, Tuteur(s), Enfant, Utilisateur(s) PARENT et envoie les emails
    */
   async acceptAndProvisionInscription(id: string, user: any) {
     const inscription = await this.prisma.inscription.findUnique({
@@ -233,83 +252,73 @@ export class InscriptionsService {
 
     const payload = inscription.payload as any;
 
+    // Valider qu'il y a au moins un tuteur avec email
+    const tuteurAvecEmail = payload.tuteurs?.find((t: any) => t.email);
+    if (!tuteurAvecEmail) {
+      throw new BadRequestException('Aucun tuteur avec email trouvé dans le payload');
+    }
+
     // Transaction atomique
     const result = await this.prisma.$transaction(async (tx) => {
       // 1. Créer ou récupérer la famille
-      const emailPrincipal = payload.mere?.email || payload.pere?.email;
-      if (!emailPrincipal) {
-        throw new BadRequestException('Aucun email parent trouvé dans le payload');
-      }
-
+      const emailPrincipal = tuteurAvecEmail.email;
       const famille = await tx.famille.upsert({
         where: { emailPrincipal },
         update: {},
         create: {
           emailPrincipal,
-          languePreferee: 'fr',
+          languePreferee: payload.famille?.languePreferee || 'fr',
+          adresseFacturation: payload.famille?.adresseFacturation,
         },
       });
 
-      // 2. Créer/mettre à jour les tuteurs
+      // 2. Créer/mettre à jour les tuteurs et comptes utilisateurs
       const tuteurs: any[] = [];
-      if (payload.mere?.email) {
+      const emailsToInvite: Array<{ email: string; prenom: string; nom: string; tuteurId: string }> = [];
+
+      for (const tuteurData of payload.tuteurs || []) {
+        if (!tuteurData.email) continue;
+
         let tuteur = await tx.tuteur.findFirst({
-          where: { email: payload.mere.email },
+          where: { email: tuteurData.email },
         });
 
         if (tuteur) {
           tuteur = await tx.tuteur.update({
             where: { id: tuteur.id },
             data: {
-              prenom: payload.mere.prenom,
-              nom: payload.mere.nom,
-              telephone: payload.mere.telephone,
+              prenom: tuteurData.prenom,
+              nom: tuteurData.nom,
+              telephone: tuteurData.telephone,
+              adresse: tuteurData.adresse,
             },
           });
         } else {
           tuteur = await tx.tuteur.create({
             data: {
               familleId: famille.id,
-              lien: 'Mere',
-              prenom: payload.mere.prenom,
-              nom: payload.mere.nom,
-              email: payload.mere.email,
-              telephone: payload.mere.telephone,
-              principal: true,
+              lien: tuteurData.lien,
+              prenom: tuteurData.prenom,
+              nom: tuteurData.nom,
+              email: tuteurData.email,
+              telephone: tuteurData.telephone,
+              adresse: tuteurData.adresse,
+              principal: tuteurData.principal || false,
             },
           });
         }
+
         tuteurs.push(tuteur);
-      }
 
-      if (payload.pere?.email) {
-        let tuteur = await tx.tuteur.findFirst({
-          where: { email: payload.pere.email },
-        });
-
-        if (tuteur) {
-          tuteur = await tx.tuteur.update({
-            where: { id: tuteur.id },
-            data: {
-              prenom: payload.pere.prenom,
-              nom: payload.pere.nom,
-              telephone: payload.pere.telephone,
-            },
-          });
-        } else {
-          tuteur = await tx.tuteur.create({
-            data: {
-              familleId: famille.id,
-              lien: 'Pere',
-              prenom: payload.pere.prenom,
-              nom: payload.pere.nom,
-              email: payload.pere.email,
-              telephone: payload.pere.telephone,
-              principal: false,
-            },
+        // Ajouter à la liste d'invitation si email et prenom/nom existent
+        if (tuteur.email && tuteur.prenom && tuteur.nom) {
+          emailsToInvite.push({
+            email: tuteur.email,
+            prenom: tuteur.prenom,
+            nom: tuteur.nom,
+            tuteurId: tuteur.id,
           });
         }
-        tuteurs.push(tuteur);
       }
 
       // 3. Créer l'enfant
@@ -319,6 +328,8 @@ export class InscriptionsService {
           prenom: payload.enfant.prenom,
           nom: payload.enfant.nom,
           dateNaissance: new Date(payload.enfant.dateNaissance),
+          genre: payload.enfant.genre,
+          photoUrl: payload.enfant.photoUrl,
         },
       });
 
@@ -342,11 +353,70 @@ export class InscriptionsService {
           email: t.email,
           lien: t.lien,
         })),
+        emailsToInvite,
       };
     });
 
+    // 5. Créer les comptes utilisateurs et envoyer les emails (hors transaction)
+    const invitedTuteurs: any[] = [];
+    for (const tuteurInfo of result.emailsToInvite) {
+      try {
+        // Générer mot de passe temporaire
+        const tempPassword = this.generateTempPassword();
+
+        // Créer l'invitation Supabase
+        const supabaseUser = await this.supabaseAdmin.createUserInvite(tuteurInfo.email);
+
+        // Créer l'utilisateur local
+        const utilisateur = await this.prisma.utilisateur.create({
+          data: {
+            email: tuteurInfo.email,
+            prenom: tuteurInfo.prenom,
+            nom: tuteurInfo.nom,
+            role: 'PARENT',
+            statut: 'INVITED',
+            authUserId: supabaseUser.userId,
+            tempPassword: tempPassword,
+            inviteLe: new Date(),
+            tuteurId: tuteurInfo.tuteurId,
+          },
+        });
+
+        // Envoyer l'email d'invitation
+        await this.emailService.sendInvitationEmail(
+          utilisateur.email,
+          utilisateur.prenom,
+          utilisateur.nom,
+          'PARENT',
+          tempPassword,
+        );
+
+        invitedTuteurs.push({
+          tuteurId: tuteurInfo.tuteurId,
+          email: tuteurInfo.email,
+          utilisateurId: utilisateur.id,
+          emailSent: true,
+        });
+
+        this.logger.log(`Parent invité et email envoyé: ${utilisateur.email}`);
+      } catch (error) {
+        this.logger.error(
+          `Erreur création compte parent ${tuteurInfo.email}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+        invitedTuteurs.push({
+          tuteurId: tuteurInfo.tuteurId,
+          email: tuteurInfo.email,
+          emailSent: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
     this.logger.log(`Inscription ${id} acceptée et provisionnée`);
-    return result;
+    return {
+      ...result,
+      invitedTuteurs,
+    };
   }
 
   /**
@@ -354,6 +424,34 @@ export class InscriptionsService {
    */
   private formatInscriptionResponse(inscription: any) {
     const payload = inscription.payload as any;
+
+    // Support both old format (mere/pere) and new format (tuteurs array)
+    let parents: any[] = [];
+
+    if (payload?.tuteurs && Array.isArray(payload.tuteurs)) {
+      parents = payload.tuteurs
+        .filter((t: any) => t.email)
+        .map((t: any) => ({
+          nom: t.nom,
+          email: t.email,
+          lien: t.lien,
+        }));
+    } else {
+      // Fallback to old format
+      parents = [
+        payload?.mere ? {
+          nom: payload.mere.nom,
+          email: payload.mere.email,
+          lien: 'Mere',
+        } : null,
+        payload?.pere ? {
+          nom: payload.pere.nom,
+          email: payload.pere.email,
+          lien: 'Pere',
+        } : null,
+      ].filter(Boolean);
+    }
+
     return {
       id: inscription.id,
       statut: inscription.statut,
@@ -363,16 +461,7 @@ export class InscriptionsService {
         prenom: payload.enfant.prenom,
         nom: payload.enfant.nom,
       } : null,
-      parents: [
-        payload?.mere ? {
-          nom: payload.mere.nom,
-          email: payload.mere.email,
-        } : null,
-        payload?.pere ? {
-          nom: payload.pere.nom,
-          email: payload.pere.email,
-        } : null,
-      ].filter(Boolean),
+      parents,
       notes: inscription.notes,
       familleId: inscription.familleId,
       enfantId: inscription.enfantId,
