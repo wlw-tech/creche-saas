@@ -12,6 +12,8 @@ import { PresencesModule } from './modules/presences/presences.module';
 import { MenusModule } from './modules/menus/menus.module';
 import { DailyResumesModule } from './modules/daily-resumes/daily-resumes.module';
 import { ClassDailySummariesModule } from './modules/class-daily-summaries/class-daily-summaries.module';
+import { ParentModule } from './modules/parent/parent.module';
+import { EventsModule } from './modules/events/events.module';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { CaptchaPlaceholderMiddleware } from './common/middlewares/captcha-placeholder.middleware';
 
@@ -30,6 +32,8 @@ import { CaptchaPlaceholderMiddleware } from './common/middlewares/captcha-place
     MenusModule,
     DailyResumesModule,
     ClassDailySummariesModule,
+    ParentModule,
+    EventsModule,
   ],
 })
 export class AppModule implements NestModule {

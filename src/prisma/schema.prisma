@@ -128,6 +128,25 @@ model Classe {
   evenements     EvenementCalendrier[]
   enseignants    EnseignantClasse[]
   dailySummaries ClassDailySummary[]
+  events         Event[]
+  enfants        Enfant[]
+}
+
+model Event {
+  id          String        @id @default(uuid())
+  titre       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime
+  classeId    String
+  classe      Classe        @relation(fields: [classeId], references: [id], onDelete: Cascade)
+  audience    EventAudience @default(CLASS)
+  status      String        @default("PUBLISHED")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([classeId, startAt])
+  @@index([startAt])
 }
 
 model Utilisateur {
@@ -196,6 +215,7 @@ model Tuteur {
   prenom      String?
   nom         String?
   telephone   String?
+  adresse     String?
   email       String?      @unique
   principal   Boolean      @default(false)
   famille     Famille      @relation(fields: [familleId], references: [id])
@@ -208,17 +228,21 @@ model Tuteur {
 model Enfant {
   id            String             @id @default(uuid())
   familleId     String
+  classeId      String?
   prenom        String
   nom           String
   dateNaissance DateTime
   genre         String?
   photoUrl      String?
   famille       Famille            @relation(fields: [familleId], references: [id])
+  classe        Classe?            @relation(fields: [classeId], references: [id])
   inscriptions  Inscription[]
   presences     Presence[]
   journaux      JournalQuotidien[]
   profilSante   ProfilSante?
   dailyResumes  DailyResume[]
+
+  @@index([classeId])
 }
 
 model Inscription {
@@ -468,4 +492,9 @@ model ClassDailySummary {
 enum StatutResume {
   Brouillon
   Publie
+}
+
+enum EventAudience {
+  CLASS
+  PARENTS_ALL
 }
