@@ -120,7 +120,7 @@ export class ClassSummaryDto {
   absentsCount: number;
   justifiesCount: number;
   resumesCount: number;
-  observations: {
+  observations?: {
     enfantPrenom: string;
     enfantNom: string;
     observation: string;

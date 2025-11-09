@@ -150,34 +150,30 @@ async function main() {
 
     await prisma.inscription.create({
       data: {
+        familleId: familleA.id,
         enfantId: sara.id,
-        classeId: petiteSection.id,
-        statut: StatutInscription.Actif,
-        dateDebut: new Date('2024-09-01'),
+        statut: 'ACTIF',
       },
     });
     await prisma.inscription.create({
       data: {
+        familleId: familleA.id,
         enfantId: yassine.id,
-        classeId: moyenneSection.id,
-        statut: StatutInscription.Actif,
-        dateDebut: new Date('2024-09-01'),
+        statut: 'ACTIF',
       },
     });
     await prisma.inscription.create({
       data: {
+        familleId: familleB.id,
         enfantId: aya.id,
-        classeId: petiteSection.id,
-        statut: StatutInscription.Actif,
-        dateDebut: new Date('2024-09-01'),
+        statut: 'ACTIF',
       },
     });
     await prisma.inscription.create({
       data: {
+        familleId: familleB.id,
         enfantId: omar.id,
-        classeId: moyenneSection.id,
-        statut: StatutInscription.Actif,
-        dateDebut: new Date('2024-09-01'),
+        statut: 'ACTIF',
       },
     });
 

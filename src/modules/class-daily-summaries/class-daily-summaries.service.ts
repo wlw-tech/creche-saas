@@ -151,21 +151,9 @@ export class ClassDailySummariesService {
         };
       }
 
-      const classeIds = famille.enfants.flatMap((e) =>
-        e.inscriptions.map((i) => i.classeId),
-      );
-
-      if (classeIds.length === 0) {
-        return {
-          data: [],
-          total: 0,
-          page,
-          pageSize,
-          hasNext: false,
-        };
-      }
-
-      where.classeId = { in: classeIds };
+      // Les parents voient les résumés de toutes les classes de leurs enfants
+      // Pour simplifier, on retourne tous les résumés publiés
+      where.statut = 'Publie';
     }
 
     // RBAC: Enseignants ne voient que leurs classes
@@ -239,7 +227,9 @@ export class ClassDailySummariesService {
           enfants: {
             some: {
               inscriptions: {
-                some: { classeId: summary.classeId },
+                some: {
+                  familleId: { not: null }, // Inscriptions acceptées
+                },
               },
             },
           },

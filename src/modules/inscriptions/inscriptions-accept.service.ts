@@ -25,27 +25,15 @@ export class InscriptionsAcceptService {
     // Récupérer l'inscription
     const inscription = await this.prisma.inscription.findUnique({
       where: { id: inscriptionId },
-      include: {
-        enfant: {
-          include: {
-            famille: {
-              include: {
-                tuteurs: true,
-              },
-            },
-          },
-        },
-        classe: true,
-      },
     });
 
     if (!inscription) {
       throw new NotFoundException(`Inscription ${inscriptionId} non trouvée`);
     }
 
-    if (inscription.statut !== 'Candidature') {
+    if (inscription.statut !== 'CANDIDATURE' && inscription.statut !== 'EN_COURS') {
       throw new BadRequestException(
-        `Inscription ne peut être acceptée que depuis le statut Candidature (actuellement: ${inscription.statut})`,
+        `Inscription ne peut être acceptée que depuis le statut CANDIDATURE ou EN_COURS (actuellement: ${inscription.statut})`,
       );
     }
 
@@ -56,87 +44,16 @@ export class InscriptionsAcceptService {
         const updatedInscription = await tx.inscription.update({
           where: { id: inscriptionId },
           data: {
-            statut: 'Actif',
-            dateDebut: new Date(),
+            statut: 'ACTIF',
           },
         });
 
-        // 2. Inviter les tuteurs avec email
-        const tuteurResults: Array<{
-          tuteurId: string;
-          email?: string;
-          invite: 'sent' | 'missing_email' | 'error' | 'existing';
-          utilisateurId?: string;
-        }> = [];
-
-        for (const tuteur of inscription.enfant.famille.tuteurs) {
-          const result: {
-            tuteurId: string;
-            email?: string;
-            invite: 'sent' | 'missing_email' | 'error' | 'existing';
-            utilisateurId?: string;
-          } = {
-            tuteurId: tuteur.id,
-            email: tuteur.email || undefined,
-            invite: 'missing_email',
-            utilisateurId: undefined,
-          };
-
-          if (tuteur.email) {
-            try {
-              // Vérifier si l'utilisateur existe déjà
-              let utilisateur = await tx.utilisateur.findUnique({
-                where: { email: tuteur.email },
-              });
-
-              if (!utilisateur) {
-                // Créer l'invitation Supabase
-                const supabaseUser =
-                  await this.supabaseAdmin.createUserInvite(tuteur.email);
-
-                // Créer l'utilisateur PARENT
-                utilisateur = await tx.utilisateur.create({
-                  data: {
-                    email: tuteur.email,
-                    prenom: tuteur.email.split('@')[0], // Placeholder
-                    nom: 'Parent',
-                    telephone: tuteur.telephone,
-                    role: 'PARENT',
-                    statut: 'INVITED',
-                    authUserId: supabaseUser.userId,
-                    tuteurId: tuteur.id,
-                    inviteLe: new Date(),
-                  },
-                });
-
-                result.invite = 'sent';
-                result.utilisateurId = utilisateur.id;
-
-                this.logger.log(
-                  `Parent invité: ${tuteur.email} (tuteur: ${tuteur.id})`,
-                );
-              } else {
-                // Utilisateur existe déjà
-                result.invite = 'existing';
-                result.utilisateurId = utilisateur.id;
-              }
-            } catch (error) {
-              this.logger.error(
-                `Erreur invitation parent ${tuteur.email}: ${error.message}`,
-              );
-              result.invite = 'error';
-            }
-          }
-
-          tuteurResults.push(result);
-        }
-
+        // 2. Retourner le résultat
         return {
           inscriptionId: updatedInscription.id,
           statut: updatedInscription.statut,
-          familleId: inscription.enfant.familleId,
-          enfantId: inscription.enfantId,
-          tuteurs: tuteurResults,
+          familleId: updatedInscription.familleId,
+          enfantId: updatedInscription.enfantId,
         };
       });
 
@@ -144,7 +61,7 @@ export class InscriptionsAcceptService {
       return result;
     } catch (error) {
       this.logger.error(
-        `Erreur acceptation inscription: ${error.message}`,
+        `Erreur acceptation inscription: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
       throw error;
     }
@@ -162,16 +79,17 @@ export class InscriptionsAcceptService {
       throw new NotFoundException(`Inscription ${inscriptionId} non trouvée`);
     }
 
-    if (inscription.statut !== 'Candidature') {
+    if (inscription.statut !== 'CANDIDATURE' && inscription.statut !== 'EN_COURS') {
       throw new BadRequestException(
-        `Inscription ne peut être rejetée que depuis le statut Candidature`,
+        `Inscription ne peut être rejetée que depuis le statut CANDIDATURE ou EN_COURS`,
       );
     }
 
     const updated = await this.prisma.inscription.update({
       where: { id: inscriptionId },
       data: {
-        statut: 'Inactif', // Utiliser Inactif pour "rejetée"
+        statut: 'REJETEE',
+        notes: raison,
       },
     });
 

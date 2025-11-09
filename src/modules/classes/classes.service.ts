@@ -18,7 +18,6 @@ export class ClassesService {
           active: createClasseDto.active ?? true,
         },
         include: {
-          inscriptions: true,
           journauxClasse: true,
           evenements: true,
         },
@@ -31,11 +30,6 @@ export class ClassesService {
   async findAll() {
     return await this.prisma.classe.findMany({
       include: {
-        inscriptions: {
-          include: {
-            enfant: true,
-          },
-        },
         journauxClasse: true,
         evenements: true,
       },
@@ -49,15 +43,6 @@ export class ClassesService {
     const classe = await this.prisma.classe.findUnique({
       where: { id },
       include: {
-        inscriptions: {
-          include: {
-            enfant: {
-              include: {
-                famille: true,
-              },
-            },
-          },
-        },
         journauxClasse: {
           include: {
             diffusions: true,
@@ -87,7 +72,6 @@ export class ClassesService {
           active: updateClasseDto.active ?? classe.active,
         },
         include: {
-          inscriptions: true,
           journauxClasse: true,
           evenements: true,
         },
@@ -115,25 +99,27 @@ export class ClassesService {
   async getClasseStats(id: string) {
     const classe = await this.findOne(id);
 
-    const inscriptions = await this.prisma.inscription.findMany({
-      where: { classeId: id },
+    // Compter les enfants inscrits dans cette classe
+    const enfants = await this.prisma.enfant.findMany({
+      where: {
+        inscriptions: {
+          some: {
+            familleId: { not: null }, // Inscriptions acceptées
+          },
+        },
+      },
     });
-
-    const activeInscriptions = inscriptions.filter(
-      (i) => i.statut === StatutInscription.Actif,
-    );
 
     return {
       id: classe.id,
       nom: classe.nom,
       capacite: classe.capacite,
-      totalInscriptions: inscriptions.length,
-      activeInscriptions: activeInscriptions.length,
+      totalEnfants: enfants.length,
       availableSpots: classe.capacite
-        ? classe.capacite - activeInscriptions.length
+        ? classe.capacite - enfants.length
         : null,
       occupancyRate: classe.capacite
-        ? Math.round((activeInscriptions.length / classe.capacite) * 100)
+        ? Math.round((enfants.length / classe.capacite) * 100)
         : null,
     };
   }

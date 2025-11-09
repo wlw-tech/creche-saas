@@ -35,11 +35,10 @@ enum LienTuteur {
 }
 
 enum StatutInscription {
-  Candidature
-  ListeAttente
-  Admis
-  Actif
-  Inactif
+  CANDIDATURE
+  EN_COURS
+  ACTIF
+  REJETEE
 }
 
 enum StatutPresence {
@@ -125,7 +124,6 @@ model Classe {
   capacite       Int?
   trancheAge     String?
   active         Boolean               @default(true)
-  inscriptions   Inscription[]
   journauxClasse JournalDeClasse[]
   evenements     EvenementCalendrier[]
   enseignants    EnseignantClasse[]
@@ -188,19 +186,23 @@ model Famille {
   tuteurs            Tuteur[]
   enfants            Enfant[]
   factures           Facture[]
+  inscriptions       Inscription[]
 }
 
 model Tuteur {
   id          String       @id @default(uuid())
   familleId   String
   lien        LienTuteur
+  prenom      String?
+  nom         String?
   telephone   String?
-  email       String?
+  email       String?      @unique
   principal   Boolean      @default(false)
   famille     Famille      @relation(fields: [familleId], references: [id])
   utilisateur Utilisateur? // Lien vers compte utilisateur si invité
 
   @@index([familleId])
+  @@index([email])
 }
 
 model Enfant {
@@ -221,18 +223,19 @@ model Enfant {
 
 model Inscription {
   id        String            @id @default(uuid())
-  enfantId  String
-  classeId  String
-  statut    StatutInscription @default(Candidature)
-  dateDebut DateTime?
-  dateFin   DateTime?
-  priorite  Int?
+  statut    StatutInscription @default(CANDIDATURE)
+  payload   Json              @default("{}")  // Données brutes du formulaire pour audit/reprise
+  enfantId  String?           // Créé lors de l'acceptation
+  familleId String?           // Créé lors de l'acceptation
+  notes     String?           // Notes admin (raison rejet, etc.)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now()) @updatedAt
 
-  enfant Enfant @relation(fields: [enfantId], references: [id])
-  classe Classe @relation(fields: [classeId], references: [id])
-  // Option utile: un enfant n'a qu'1 inscription "Actif" à la fois (non modélisable en unique partiel ici).
+  enfant  Enfant?  @relation(fields: [enfantId], references: [id])
+  famille Famille? @relation(fields: [familleId], references: [id])
 
-  @@index([classeId])
+  @@index([statut])
+  @@index([createdAt])
 }
 
 model Presence {

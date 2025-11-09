@@ -68,11 +68,7 @@ export class FamillesService {
         tuteurs: true,
         enfants: {
           include: {
-            inscriptions: {
-              include: {
-                classe: true,
-              },
-            },
+            inscriptions: true,
           },
         },
       },
@@ -143,7 +139,7 @@ export class FamillesService {
 
     const totalEnfants = enfants.length;
     const enfantsActifs = enfants.filter((enfant) =>
-      enfant.inscriptions.some((i) => i.statut === 'Actif'),
+      enfant.inscriptions.some((i) => i.statut === 'ACTIF'),
     ).length;
 
     return {

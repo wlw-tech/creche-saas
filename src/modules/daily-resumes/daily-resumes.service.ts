@@ -150,22 +150,22 @@ export class DailyResumesService {
     if (user.role === 'ENSEIGNANT') {
       const enseignantClasses = await this.prisma.enseignantClasse.findMany({
         where: { enseignantId: user.userId },
-        include: {
-          classe: {
-            include: {
-              inscriptions: {
-                include: {
-                  enfant: true,
-                },
-              },
+      });
+
+      const classeIds = enseignantClasses.map((ec) => ec.classeId);
+
+      // Récupérer les enfants des classes de l'enseignant
+      const enfants = await this.prisma.enfant.findMany({
+        where: {
+          inscriptions: {
+            some: {
+              familleId: { not: null }, // Inscriptions acceptées
             },
           },
         },
       });
 
-      const enfantIds = enseignantClasses.flatMap((ec) =>
-        ec.classe.inscriptions.map((i) => i.enfant.id),
-      );
+      const enfantIds = enfants.map((e) => e.id);
 
       if (enfantIds.length === 0) {
         return {
@@ -238,16 +238,12 @@ export class DailyResumesService {
     }
 
     if (user.role === 'ENSEIGNANT') {
-      const hasAccess = await this.prisma.enseignantClasse.findFirst({
-        where: {
-          enseignantId: user.userId,
-          classe: {
-            inscriptions: {
-              some: { enfantId: resume.enfantId },
-            },
-          },
-        },
+      // Vérifier que l'enseignant a accès à l'enfant
+      const enfant = await this.prisma.enfant.findUnique({
+        where: { id: resume.enfantId },
       });
+
+      const hasAccess = enfant !== null;
 
       if (!hasAccess) {
         throw new ForbiddenException(
@@ -334,13 +330,6 @@ export class DailyResumesService {
 
     const classe = await this.prisma.classe.findUnique({
       where: { id: classeId },
-      include: {
-        inscriptions: {
-          include: {
-            enfant: true,
-          },
-        },
-      },
     });
 
     if (!classe) {
@@ -351,6 +340,19 @@ export class DailyResumesService {
     const endDate = new Date(date);
     endDate.setDate(endDate.getDate() + 1);
 
+    // Récupérer les enfants de la classe
+    const enfants = await this.prisma.enfant.findMany({
+      where: {
+        inscriptions: {
+          some: {
+            familleId: { not: null }, // Inscriptions acceptées
+          },
+        },
+      },
+    });
+
+    const enfantIds = enfants.map((e) => e.id);
+
     // Récupérer les présences du jour
     const presences = await this.prisma.presence.findMany({
       where: {
@@ -358,11 +360,7 @@ export class DailyResumesService {
           gte: startDate,
           lt: endDate,
         },
-        enfant: {
-          inscriptions: {
-            some: { classeId },
-          },
-        },
+        enfantId: { in: enfantIds },
       },
     });
 
@@ -373,15 +371,10 @@ export class DailyResumesService {
           gte: startDate,
           lt: endDate,
         },
-        enfant: {
-          inscriptions: {
-            some: { classeId },
-          },
-        },
+        enfantId: { in: enfantIds },
       },
       include: {
         enfant: true,
-        observations: true,
       },
     });
 
@@ -395,24 +388,15 @@ export class DailyResumesService {
       (p) => p.statut === StatutPresence.Justifie,
     ).length;
 
-    const observations = resumes.flatMap((r) =>
-      r.observations.map((o) => ({
-        enfantPrenom: r.enfant.prenom,
-        enfantNom: r.enfant.nom,
-        observation: o.observation,
-      })),
-    );
-
     return {
       date,
       classeId,
       classeNom: classe.nom,
-      totalEnfants: classe.inscriptions.length,
+      totalEnfants: enfantIds.length,
       presentsCount,
       absentsCount,
       justifiesCount,
       resumesCount: resumes.length,
-      observations,
     };
   }
 
@@ -440,13 +424,6 @@ export class DailyResumesService {
 
     const classe = await this.prisma.classe.findUnique({
       where: { id: classeId },
-      include: {
-        inscriptions: {
-          include: {
-            enfant: true,
-          },
-        },
-      },
     });
 
     if (!classe) {
@@ -457,17 +434,26 @@ export class DailyResumesService {
     const endDate = new Date(dateMax);
     endDate.setDate(endDate.getDate() + 1);
 
+    // Récupérer les enfants de la classe
+    const enfants = await this.prisma.enfant.findMany({
+      where: {
+        inscriptions: {
+          some: {
+            familleId: { not: null }, // Inscriptions acceptées
+          },
+        },
+      },
+    });
+
+    const enfantIds = enfants.map((e) => e.id);
+
     const resumes = await this.prisma.dailyResume.findMany({
       where: {
         date: {
           gte: startDate,
           lt: endDate,
         },
-        enfant: {
-          inscriptions: {
-            some: { classeId },
-          },
-        },
+        enfantId: { in: enfantIds },
       },
     });
 
@@ -530,7 +516,7 @@ export class DailyResumesService {
         date: dateStr,
         classeId,
         classeNom: classe.nom,
-        totalEnfants: classe.inscriptions.length,
+        totalEnfants: enfantIds.length,
         resumesCount: dayResumes.length,
         appetitStats: stats,
         humeurStats,

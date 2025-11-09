@@ -208,3 +208,82 @@ export class CreateInscriptionDto {
   @IsString()
   commentaire?: string;
 }
+
+/**
+ * DTO pour lister les inscriptions (admin)
+ */
+export class ListInscriptionsQueryDto {
+  @ApiPropertyOptional({
+    description: 'Filtrer par statut',
+    enum: ['CANDIDATURE', 'EN_COURS', 'ACTIF', 'REJETEE'],
+  })
+  @IsOptional()
+  @IsString()
+  statut?: 'CANDIDATURE' | 'EN_COURS' | 'ACTIF' | 'REJETEE';
+
+  @ApiPropertyOptional({
+    description: 'Recherche dans nom/prenom enfant ou email tuteurs',
+  })
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @ApiPropertyOptional({
+    description: 'Date minimum (ISO 8601)',
+  })
+  @IsOptional()
+  @IsISO8601()
+  dateMin?: string;
+
+  @ApiPropertyOptional({
+    description: 'Date maximum (ISO 8601)',
+  })
+  @IsOptional()
+  @IsISO8601()
+  dateMax?: string;
+
+  @ApiPropertyOptional({
+    description: 'Numéro de page',
+    default: 1,
+  })
+  @IsOptional()
+  page?: number;
+
+  @ApiPropertyOptional({
+    description: 'Éléments par page',
+    default: 25,
+  })
+  @IsOptional()
+  pageSize?: number;
+}
+
+/**
+ * DTO pour rejeter une inscription
+ */
+export class RejectInscriptionDto {
+  @ApiProperty({
+    description: 'Raison du rejet',
+    example: 'Dossier incomplet',
+  })
+  @IsString()
+  raison: string;
+}
+
+/**
+ * DTO pour mettre à jour le statut d'une inscription
+ */
+export class UpdateInscriptionStatusDto {
+  @ApiProperty({
+    description: 'Nouveau statut',
+    enum: ['EN_COURS', 'ACTIF', 'REJETEE'],
+  })
+  @IsString()
+  statut: 'EN_COURS' | 'ACTIF' | 'REJETEE';
+
+  @ApiPropertyOptional({
+    description: 'Notes admin',
+  })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
