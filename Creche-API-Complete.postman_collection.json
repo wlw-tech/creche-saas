@@ -291,7 +291,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nom\": \"Petite Section\",\n  \"niveau\": \"PS\",\n  \"capacite\": 20\n}"
+              "raw": "{\n  \"nom\": \"Petite Section\",\n  \"trancheAge\": \"PS\",\n  \"capacite\": 20,\n  \"active\": true\n}"
             },
             "url": {
               "raw": "{{base_url}}/admin/classes",
@@ -367,7 +367,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nom\": \"Petite Section A\",\n  \"capacite\": 22\n}"
+              "raw": "{\n  \"nom\": \"Petite Section A\",\n  \"trancheAge\": \"PS\",\n  \"capacite\": 22,\n  \"active\": true\n}"
             },
             "url": {
               "raw": "{{base_url}}/admin/classes/{{classe_id}}",
