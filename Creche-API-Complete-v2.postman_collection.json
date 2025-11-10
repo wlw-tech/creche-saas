@@ -73,7 +73,7 @@
       "name": "👥 Admin - Utilisateurs",
       "item": [
         {
-          "name": "Créer Utilisateur",
+          "name": "Créer Utilisateur (Enseignant ou Parent)",
           "request": {
             "method": "POST",
             "header": [
@@ -98,6 +98,31 @@
           }
         },
         {
+          "name": "Inviter Enseignant (Legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"prof@example.com\",\n  \"prenom\": \"Ahmed\",\n  \"nom\": \"Dupont\",\n  \"telephone\": \"+212612345678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users/teachers/invite",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "teachers", "invite"]
+            }
+          }
+        },
+        {
           "name": "Lister Utilisateurs",
           "request": {
             "method": "GET",
@@ -108,7 +133,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/admin/users?page=1&pageSize=25",
+              "raw": "{{base_url}}/admin/users?page=1&limit=25",
               "host": ["{{base_url}}"],
               "path": ["admin", "users"],
               "query": [
@@ -117,10 +142,27 @@
                   "value": "1"
                 },
                 {
-                  "key": "pageSize",
+                  "key": "limit",
                   "value": "25"
                 }
               ]
+            }
+          }
+        },
+        {
+          "name": "Détails Utilisateur",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "{{user_id}}"]
             }
           }
         }
@@ -640,6 +682,11 @@
     },
     {
       "key": "menu_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
       "value": "",
       "type": "string"
     }
