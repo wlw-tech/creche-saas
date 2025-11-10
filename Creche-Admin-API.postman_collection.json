@@ -10,6 +10,20 @@
       "item": [
         {
           "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('adminToken', jsonData.accessToken);",
+                  "  console.log('✅ Admin token saved to environment');",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -20,14 +34,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"tempPassword123\"\n}"
+              "raw": "{\n  \"email\": \"admin@wlw.ma\",\n  \"password\": \"change_me\"\n}"
             },
             "url": {
-              "raw": "http://localhost:3000/api/auth/login-user",
+              "raw": "http://localhost:3000/api/auth/login",
               "protocol": "http",
               "host": ["localhost"],
               "port": "3000",
-              "path": ["api", "auth", "login-user"]
+              "path": ["api", "auth", "login"]
             }
           }
         }
@@ -286,7 +300,7 @@
     },
     {
       "key": "classe_id",
-      "value": "",
+      "value": "00000000-0000-0000-0000-000000000001",
       "type": "string"
     },
     {

@@ -2,21 +2,35 @@
 
 ## 🔐 Authentification Admin
 
-### Générer un JWT Token Admin
-```javascript
-const jwt = require('jsonwebtoken');
+### Identifiants Admin (DEV)
+```
+Email: admin@wlw.ma
+Password: change_me
+```
 
-const token = jwt.sign(
-  {
-    userId: 'admin_123',
-    email: 'admin@example.com',
-    role: 'ADMIN'
-  },
-  'dev_secret',
-  { expiresIn: '24h' }
-);
+### Endpoint de Login
+```
+POST /api/auth/login
+```
 
-console.log(token);
+### Exemple de Login
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@wlw.ma",
+    "password": "change_me"
+  }'
+```
+
+### Réponse
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "userId": "admin_dev",
+  "role": "ADMIN",
+  "email": "admin@wlw.ma"
+}
 ```
 
 ### Utiliser le Token dans les Requêtes
