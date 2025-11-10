@@ -38,6 +38,27 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Utilisateur non authentifié');
     }
 
+    // Cas spécial: Admin hardcodé en DEV (userId = 'admin_dev')
+    if (user.userId === 'admin_dev' && user.role === 'ADMIN') {
+      // Vérifier le rôle
+      if (!requiredRoles.includes(user.role)) {
+        this.logger.warn(
+          `Accès refusé: ${user.email} (${user.role}) ne peut pas accéder à ${context.getClass().name}`,
+        );
+        throw new ForbiddenException(
+          `Rôle insuffisant. Rôles autorisés: ${requiredRoles.join(', ')}`,
+        );
+      }
+      // Admin est toujours actif
+      request.utilisateur = {
+        id: user.userId,
+        email: user.email,
+        role: user.role,
+        statut: 'ACTIVE',
+      };
+      return true;
+    }
+
     // Récupérer l'utilisateur depuis la base de données
     const utilisateur = await this.prisma.utilisateur.findUnique({
       where: { email: user.email },
