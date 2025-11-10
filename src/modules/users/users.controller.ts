@@ -37,6 +37,7 @@ import {
 @ApiTags('Admin/Users')
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
 @ApiBearerAuth()
 export class UsersController {
   constructor(private usersService: UsersService) {}
