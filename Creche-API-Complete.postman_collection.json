@@ -1,0 +1,986 @@
+{
+  "info": {
+    "name": "Creche SaaS API - Complete Collection",
+    "description": "Complete API collection for Creche SaaS with all endpoints organized by role and functionality",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🔐 AUTHENTIFICATION",
+      "item": [
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@wlw.ma\",\n  \"password\": \"change_me\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"temporary_password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login-user",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login-user"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"change_me\",\n  \"newPassword\": \"new_password_123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "change-password"]
+            }
+          }
+        },
+        {
+          "name": "Verify Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{admin_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/verify",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "verify"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 ADMIN - UTILISATEURS",
+      "item": [
+        {
+          "name": "Créer Utilisateur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"prof@example.com\",\n  \"prenom\": \"Ahmed\",\n  \"nom\": \"Dupont\",\n  \"telephone\": \"+212612345678\",\n  \"role\": \"ENSEIGNANT\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "Inviter Enseignant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teacher@example.com\",\n  \"prenom\": \"Fatima\",\n  \"nom\": \"Martin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users/teachers/invite",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "teachers", "invite"]
+            }
+          }
+        },
+        {
+          "name": "Lister Utilisateurs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users?role=ENSEIGNANT&statut=ACTIVE&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "ENSEIGNANT"
+                },
+                {
+                  "key": "statut",
+                  "value": "ACTIVE"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Détails Utilisateur",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Changer Statut Utilisateur",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statut\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users/{{user_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "{{user_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Assigner Enseignant à Classe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classeId\": \"{{classe_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users/teachers/{{user_id}}/assign-class",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "teachers", "{{user_id}}", "assign-class"]
+            }
+          }
+        },
+        {
+          "name": "Supprimer Utilisateur",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "{{user_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 ADMIN - CLASSES",
+      "item": [
+        {
+          "name": "Créer Classe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Petite Section\",\n  \"niveau\": \"PS\",\n  \"capacite\": 20\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/classes",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "classes"]
+            }
+          }
+        },
+        {
+          "name": "Lister Classes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/classes",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "classes"]
+            }
+          }
+        },
+        {
+          "name": "Détails Classe (avec enfants)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/classes/{{classe_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "classes", "{{classe_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Statistiques Classe",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/classes/{{classe_id}}/stats",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "classes", "{{classe_id}}", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Modifier Classe",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Petite Section A\",\n  \"capacite\": 22\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/classes/{{classe_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "classes", "{{classe_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Enfants de la Classe",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/classes/{{classe_id}}/enfants",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "classes", "{{classe_id}}", "enfants"]
+            }
+          }
+        },
+        {
+          "name": "Assigner Enseignant à Classe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/classes/{{classe_id}}/enseignants/{{enseignant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "classes", "{{classe_id}}", "enseignants", "{{enseignant_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Retirer Enseignant de Classe",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/classes/{{classe_id}}/enseignants/{{enseignant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "classes", "{{classe_id}}", "enseignants", "{{enseignant_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Supprimer Classe",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/classes/{{classe_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "classes", "{{classe_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🍽️ MENUS",
+      "item": [
+        {
+          "name": "Créer Menu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2025-11-10\",\n  \"entree\": \"Salade\",\n  \"plat\": \"Poulet riz\",\n  \"dessert\": \"Fruit\",\n  \"allergenes\": [\"Arachides\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/menus",
+              "host": ["{{base_url}}"],
+              "path": ["menus"]
+            }
+          }
+        },
+        {
+          "name": "Lister Menus",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/menus?statut=Publie&page=1&pageSize=10",
+              "host": ["{{base_url}}"],
+              "path": ["menus"],
+              "query": [
+                {
+                  "key": "statut",
+                  "value": "Publie"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Menu du Jour",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/menus/today",
+              "host": ["{{base_url}}"],
+              "path": ["menus", "today"]
+            }
+          }
+        },
+        {
+          "name": "Détails Menu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/menus/{{menu_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["menus", "{{menu_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Modifier Menu",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plat\": \"Poulet frites\",\n  \"allergenes\": [\"Arachides\", \"Gluten\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/menus/{{menu_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["menus", "{{menu_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Publier Menu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/menus/{{menu_id}}/publish",
+              "host": ["{{base_url}}"],
+              "path": ["menus", "{{menu_id}}", "publish"]
+            }
+          }
+        },
+        {
+          "name": "Supprimer Menu",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/menus/{{menu_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["menus", "{{menu_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📍 PRÉSENCES",
+      "item": [
+        {
+          "name": "Lister Présences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/presences?page=1&pageSize=10",
+              "host": ["{{base_url}}"],
+              "path": ["presences"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Créer Présence",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enfantId\": \"enf_123\",\n  \"date\": \"2025-11-10\",\n  \"statut\": \"PRESENT\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/presences",
+              "host": ["{{base_url}}"],
+              "path": ["presences"]
+            }
+          }
+        },
+        {
+          "name": "Présences par Classe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classeId\": \"{{classe_id}}\",\n  \"date\": \"2025-11-10\",\n  \"presences\": [\n    {\n      \"enfantId\": \"enf_1\",\n      \"statut\": \"PRESENT\"\n    },\n    {\n      \"enfantId\": \"enf_2\",\n      \"statut\": \"ABSENT\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/presences/class",
+              "host": ["{{base_url}}"],
+              "path": ["presences", "class"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 RÉSUMÉS QUOTIDIENS",
+      "item": [
+        {
+          "name": "Créer Résumé",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enfantId\": \"enf_123\",\n  \"date\": \"2025-11-10\",\n  \"humeur\": \"JOYEUX\",\n  \"appetit\": \"BON\",\n  \"qualiteSieste\": \"BON\",\n  \"participation\": \"ACTIVE\",\n  \"activites\": \"Jeux, dessin\",\n  \"observations\": \"Enfant très actif aujourd'hui\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/daily-resumes",
+              "host": ["{{base_url}}"],
+              "path": ["daily-resumes"]
+            }
+          }
+        },
+        {
+          "name": "Lister Résumés",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/daily-resumes?page=1&pageSize=10",
+              "host": ["{{base_url}}"],
+              "path": ["daily-resumes"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Détails Résumé",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/daily-resumes/{{resume_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["daily-resumes", "{{resume_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Modifier Résumé",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"humeur\": \"CALME\",\n  \"observations\": \"Enfant plus calme en fin de journée\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/daily-resumes/{{resume_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["daily-resumes", "{{resume_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Publier Résumé",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/daily-resumes/{{resume_id}}/publish",
+              "host": ["{{base_url}}"],
+              "path": ["daily-resumes", "{{resume_id}}", "publish"]
+            }
+          }
+        },
+        {
+          "name": "Supprimer Résumé",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/daily-resumes/{{resume_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["daily-resumes", "{{resume_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👨‍👩‍👧 PARENT - TABLEAU DE BORD",
+      "item": [
+        {
+          "name": "Profil Parent",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/parent/me",
+              "host": ["{{base_url}}"],
+              "path": ["parent", "me"]
+            }
+          }
+        },
+        {
+          "name": "Modifier Profil Parent",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telephone\": \"+212612345678\",\n  \"adresse\": \"123 Rue de la Paix\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/parent/me",
+              "host": ["{{base_url}}"],
+              "path": ["parent", "me"]
+            }
+          }
+        },
+        {
+          "name": "Présences Enfant",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/parent/enfants/enf_123/presences",
+              "host": ["{{base_url}}"],
+              "path": ["parent", "enfants", "enf_123", "presences"]
+            }
+          }
+        },
+        {
+          "name": "Menu Classe",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/parent/classes/{{classe_id}}/menu",
+              "host": ["{{base_url}}"],
+              "path": ["parent", "classes", "{{classe_id}}", "menu"]
+            }
+          }
+        },
+        {
+          "name": "Résumé Enfant",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/parent/enfants/enf_123/resume",
+              "host": ["{{base_url}}"],
+              "path": ["parent", "enfants", "enf_123", "resume"]
+            }
+          }
+        },
+        {
+          "name": "Journal Classe",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/parent/classes/{{classe_id}}/journal/latest",
+              "host": ["{{base_url}}"],
+              "path": ["parent", "classes", "{{classe_id}}", "journal", "latest"]
+            }
+          }
+        },
+        {
+          "name": "Événements",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/parent/events",
+              "host": ["{{base_url}}"],
+              "path": ["parent", "events"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "user_token",
+      "value": ""
+    },
+    {
+      "key": "classe_id",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "menu_id",
+      "value": ""
+    },
+    {
+      "key": "resume_id",
+      "value": ""
+    },
+    {
+      "key": "enseignant_id",
+      "value": ""
+    }
+  ]
+}
+
