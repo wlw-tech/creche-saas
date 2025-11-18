@@ -1,0 +1,480 @@
+{
+  "info": {
+    "_postman_id": "creche-wlw-api-v2",
+    "name": "Crèche WLW API v2",
+    "description": "Collection Postman pour tester l'API Crèche WLW - Auth, Presences & Menus",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@wlw.ma\",\n  \"password\": \"change_me\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Menus",
+      "item": [
+        {
+          "name": "Create Menu (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2025-11-07\",\n  \"entree\": \"Soupe de légumes\",\n  \"plat\": \"Poulet rôti avec riz\",\n  \"dessert\": \"Yaourt nature\",\n  \"allergenes\": [\"Arachides\", \"Gluten\", \"Lait\"]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/menus",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "menus"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Menus",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/menus?page=1&pageSize=25",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "menus"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "25"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Today Menu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/menus/today",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "menus",
+                "today"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Menu by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/menus/{{menuId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "menus",
+                "{{menuId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Menu (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plat\": \"Poisson avec légumes\",\n  \"allergenes\": [\"Poisson\", \"Gluten\"]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/menus/{{menuId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "menus",
+                "{{menuId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Publish Menu (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/menus/{{menuId}}/publish",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "menus",
+                "{{menuId}}",
+                "publish"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Menu (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/menus/{{menuId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "menus",
+                "{{menuId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Daily Resumes",
+      "item": [
+        {
+          "name": "Create Daily Resume (ENSEIGNANT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enfantId\": \"{{enfantId}}\",\n  \"date\": \"2025-11-06\",\n  \"appetit\": \"Bon\",\n  \"humeur\": \"Excellent\",\n  \"sieste\": \"Bon\",\n  \"participation\": \"Excellent\",\n  \"observations\": [\n    \"Très actif aujourd'hui\",\n    \"A bien mangé à midi\",\n    \"Sieste de 2h\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/daily-resumes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "daily-resumes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Daily Resumes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/daily-resumes?page=1&pageSize=25&date=2025-11-06",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "daily-resumes"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "25"
+                },
+                {
+                  "key": "date",
+                  "value": "2025-11-06"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Daily Resume by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/daily-resumes/{{resumeId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "daily-resumes",
+                "{{resumeId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Daily Resume (ENSEIGNANT)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appetit\": \"Excellent\",\n  \"observations\": [\"Très actif\", \"Sieste 2h30\"]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/daily-resumes/{{resumeId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "daily-resumes",
+                "{{resumeId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Class Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/daily-resumes/class/{{classeId}}/summary?date=2025-11-06",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "daily-resumes",
+                "class",
+                "{{classeId}}",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2025-11-06"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/daily-resumes/class/{{classeId}}/export?dateMin=2025-11-01&dateMax=2025-11-06",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "daily-resumes",
+                "class",
+                "{{classeId}}",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "dateMin",
+                  "value": "2025-11-01"
+                },
+                {
+                  "key": "dateMax",
+                  "value": "2025-11-06"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "menuId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "resumeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "enfantId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "classeId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
+
