@@ -8,7 +8,6 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateInscriptionDto, ListInscriptionsQueryDto, UpdateInscriptionStatusDto } from './dto/create-inscription.dto';
 import { EmailService } from '../../common/services/email.service';
-import { SupabaseAdminService } from '../../common/services/supabase-admin.service';
 
 /**
  * Service pour gérer les inscriptions publiques
@@ -21,7 +20,6 @@ export class InscriptionsService {
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
-    private supabaseAdmin: SupabaseAdminService,
   ) {}
 
   /**
@@ -364,9 +362,6 @@ export class InscriptionsService {
         // Générer mot de passe temporaire
         const tempPassword = this.generateTempPassword();
 
-        // Créer l'invitation Supabase
-        const supabaseUser = await this.supabaseAdmin.createUserInvite(tuteurInfo.email);
-
         // Créer l'utilisateur local
         const utilisateur = await this.prisma.utilisateur.create({
           data: {
@@ -375,7 +370,6 @@ export class InscriptionsService {
             nom: tuteurInfo.nom,
             role: 'PARENT',
             statut: 'INVITED',
-            authUserId: supabaseUser.userId,
             tempPassword: tempPassword,
             inviteLe: new Date(),
             tuteurId: tuteurInfo.tuteurId,

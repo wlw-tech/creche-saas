@@ -5,7 +5,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SupabaseAdminService } from '../../common/services/supabase-admin.service';
 
 @Injectable()
 export class InscriptionsAcceptService {
@@ -13,7 +12,6 @@ export class InscriptionsAcceptService {
 
   constructor(
     private prisma: PrismaService,
-    private supabaseAdmin: SupabaseAdminService,
   ) {}
 
   /**

@@ -5,7 +5,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SupabaseAdminService } from '../../common/services/supabase-admin.service';
 import { EmailService } from '../../common/services/email.service';
 import { CreateUserDto, InviteTeacherDto, UpdateUserStatusDto, ListUsersQueryDto } from './dto/create-user.dto';
 
@@ -15,7 +14,6 @@ export class UsersService {
 
   constructor(
     private prisma: PrismaService,
-    private supabaseAdmin: SupabaseAdminService,
     private emailService: EmailService,
   ) {}
 
@@ -40,9 +38,6 @@ export class UsersService {
       // Générer un mot de passe temporaire
       const tempPassword = this.generateTempPassword();
 
-      // Créer l'invitation Supabase
-      const supabaseUser = await this.supabaseAdmin.createUserInvite(dto.email);
-
       // Créer l'utilisateur local
       const utilisateur = await this.prisma.utilisateur.create({
         data: {
@@ -52,7 +47,6 @@ export class UsersService {
           telephone: dto.telephone,
           role: dto.role as any,
           statut: 'INVITED',
-          authUserId: supabaseUser.userId,
           tempPassword: tempPassword,
           inviteLe: new Date(),
         },
@@ -74,7 +68,7 @@ export class UsersService {
         email: utilisateur.email,
         role: utilisateur.role,
         statut: utilisateur.statut,
-        invited: supabaseUser.invited,
+        invited: true,
         emailSent: true,
       };
     } catch (error) {
@@ -104,9 +98,6 @@ export class UsersService {
       // Générer un mot de passe temporaire
       const tempPassword = this.generateTempPassword();
 
-      // Créer l'invitation Supabase
-      const supabaseUser = await this.supabaseAdmin.createUserInvite(dto.email);
-
       // Créer l'utilisateur local
       const utilisateur = await this.prisma.utilisateur.create({
         data: {
@@ -116,7 +107,6 @@ export class UsersService {
           telephone: dto.telephone,
           role: 'ENSEIGNANT',
           statut: 'INVITED',
-          authUserId: supabaseUser.userId,
           tempPassword: tempPassword,
           inviteLe: new Date(),
         },
@@ -137,7 +127,7 @@ export class UsersService {
         utilisateurId: utilisateur.id,
         email: utilisateur.email,
         statut: utilisateur.statut,
-        invited: supabaseUser.invited,
+        invited: true,
         emailSent: true,
       };
     } catch (error) {
