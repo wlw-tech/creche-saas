@@ -1,568 +1,465 @@
-# PetitsPas — Documentation Technique & Fonctionnelle
+# PetitsPas — Documentation Technique
 
-> Application SaaS de gestion de crèche — version multi-rôles (Admin / Enseignant / Parent)
+> Application SaaS de gestion de crèche — version 2026
 
 ---
 
 ## Table des matières
 
-1. [Vue d'ensemble](#vue-densemble)
-2. [Architecture technique](#architecture-technique)
-3. [Stack technologique](#stack-technologique)
-4. [Sécurité](#sécurité)
-5. [Fonctionnalités par rôle](#fonctionnalités-par-rôle)
-   - [5.1 Espace Admin](#51-espace-admin)
-   - [5.2 Espace Enseignant](#52-espace-enseignant)
-   - [5.3 Espace Parent](#53-espace-parent)
-   - [5.4 Formulaire d'inscription public](#54-formulaire-dinscription-public)
-6. [Modèle de données (Prisma)](#modèle-de-données-prisma)
-7. [API REST — Endpoints principaux](#api-rest--endpoints-principaux)
-8. [Internationalisation (i18n)](#internationalisation-i18n)
-9. [Déploiement](#déploiement)
-10. [Variables d'environnement](#variables-denvironnement)
-11. [Développement local](#développement-local)
+1. [Présentation générale](#1-présentation-générale)
+2. [Technologies utilisées](#2-technologies-utilisées)
+3. [Architecture du système](#3-architecture-du-système)
+4. [Fonctionnalités](#4-fonctionnalités)
+5. [Modèle de données](#5-modèle-de-données)
+6. [Sécurité](#6-sécurité)
+7. [API REST — Endpoints](#7-api-rest--endpoints)
+8. [Déploiement](#8-déploiement)
+9. [Variables d'environnement](#9-variables-denvironnement)
 
 ---
 
-## Vue d'ensemble
+## 1. Présentation générale
 
-**PetitsPas** est une plateforme web SaaS destinée à la gestion d'une crèche ou garderie. Elle permet de gérer :
+**PetitsPas** est une application web SaaS (Software as a Service) destinée à la gestion quotidienne d'une crèche. Elle couvre :
 
-- Les **inscriptions** des enfants (formulaire public multi-étapes)
-- Le **suivi quotidien** (présences, résumé de journée, journal de classe)
-- Les **menus** hebdomadaires publiés par l'administration
-- Les **événements** de la crèche
-- Les **profils de santé** des enfants (allergies, intolérances, restrictions alimentaires)
-- La **communication** entre l'administration et les parents
+- L'inscription des enfants et la gestion des dossiers familiaux
+- Le suivi des présences (arrivée, départ, statut)
+- Les menus hebdomadaires publiés aux parents
+- Les résumés journaliers de chaque enfant (humeur, appétit, sieste…)
+- La communication avec les familles (événements, règlement intérieur)
+- Les tableaux de bord adaptés à chaque rôle (Admin, Enseignant, Parent)
 
-L'application est **bilingue** (français / arabe) avec support RTL complet.
-
----
-
-## Architecture technique
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                       FRONTEND                          │
-│   Next.js 16 (App Router) — Vercel / hébergement       │
-│   Port local : 3001                                     │
-│                                                         │
-│  ┌──────────┐  ┌────────────┐  ┌───────────────────┐   │
-│  │  Admin   │  │ Enseignant │  │     Parent        │   │
-│  │ /admin/* │  │ /teacher/* │  │   /parent (SPA)   │   │
-│  └──────────┘  └────────────┘  └───────────────────┘   │
-│                                                         │
-│  Inscription publique : /[locale]/inscriptions          │
-└─────────────────────┬───────────────────────────────────┘
-                      │ HTTPS / REST (axios)
-                      │ JWT Bearer token
-┌─────────────────────▼───────────────────────────────────┐
-│                       BACKEND                           │
-│   NestJS 11 — Render.com                               │
-│   Port local : 3000   Préfixe : /api                   │
-│                                                         │
-│  Modules : Auth · Users · Inscriptions · Classes       │
-│            Enfants · Menus · Events · Présences        │
-│            Résumés · Règlement · Parent · Teacher      │
-└─────────────────────┬───────────────────────────────────┘
-                      │ Prisma ORM
-┌─────────────────────▼───────────────────────────────────┐
-│   PostgreSQL — Render.com (managed database)            │
-└─────────────────────────────────────────────────────────┘
-```
+L'application est bilingue **Français / Arabe** avec support RTL.
 
 ---
 
-## Stack technologique
+## 2. Technologies utilisées
 
-### Backend (`creche-api/`)
+### Backend
 
 | Technologie | Version | Rôle |
-|-------------|---------|------|
-| **NestJS** | 11 | Framework Node.js — modules, guards, pipes |
-| **Prisma ORM** | 6.17 | Accès base de données, migrations |
-| **PostgreSQL** | managed | Base de données relationnelle |
-| **JWT** (`@nestjs/jwt`) | — | Authentification stateless |
+|---|---|---|
+| **NestJS** | 10.x | Framework API REST (Node.js) |
+| **Prisma ORM** | 5.x | Accès base de données, migrations |
+| **PostgreSQL** | 15 | Base de données relationnelle |
+| **JWT (jsonwebtoken)** | — | Authentification sans état |
 | **bcrypt** | — | Hachage des mots de passe |
-| **class-validator** | — | Validation des DTOs (whitelist + forbidNonWhitelisted) |
-| **@nestjs/swagger** | 11 | Documentation API auto-générée (`/api/docs`) |
-| **@nestjs/throttler** | 6 | Rate limiting anti-abus |
-| **Nodemailer** | — | Envoi d'emails (confirmation inscription, accès parent) |
-| **TypeScript** | 5 | Typage statique |
+| **class-validator / class-transformer** | — | Validation des DTOs entrants |
+| **Swagger (OpenAPI)** | — | Documentation interactive de l'API (`/api`) |
+| **Nodemailer** | — | Envoi d'e-mails (confirmation inscription, notifications) |
 
-### Frontend (`creche-frontend/`)
+### Frontend
 
 | Technologie | Version | Rôle |
-|-------------|---------|------|
-| **Next.js** | 16 | Framework React (App Router, SSR/CSR) |
-| **React** | 19 | UI library |
-| **Tailwind CSS** | 4 | Utility-first CSS |
-| **shadcn/ui** | — | Composants UI (Radix UI primitives) |
-| **next-intl** | 4 | Internationalisation (fr / ar) |
-| **axios** | 1.13 | Client HTTP vers le backend |
-| **lucide-react** | 0.554 | Icônes |
-| **react-hook-form** | 7 | Formulaires |
-| **zod** | 4 | Validation des schémas côté client |
-| **zustand** | 5 | State management global |
-| **recharts** | 3 | Graphiques (présences) |
-| **TypeScript** | 5 | Typage statique |
+|---|---|---|
+| **Next.js 14** | App Router | Framework React SSR/CSR |
+| **TypeScript** | 5.x | Typage statique |
+| **Tailwind CSS** | 3.x | Styles utilitaires |
+| **shadcn/ui** | — | Composants UI (Card, Button, Badge, Input…) |
+| **next-intl** | — | Internationalisation (fr/ar, routing locale) |
+| **Lucide React** | — | Icônes |
+| **axios** | — | Client HTTP (`src/lib/api.ts`) |
+
+### Infrastructure
+
+| Service | Rôle |
+|---|---|
+| **Render.com** | Hébergement backend NestJS + PostgreSQL |
+| **Vercel** | Hébergement frontend Next.js |
+| **GitHub** | Dépôt de code, CI/CD automatique |
 
 ---
 
-## Sécurité
+## 3. Architecture du système
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        FRONTEND (Vercel)                        │
+│                      Next.js 14 App Router                      │
+│                                                                 │
+│  /[locale]/admin/…      → Interface administrateur             │
+│  /[locale]/teacher/…    → Interface enseignant                 │
+│  /[locale]/parent/…     → Dashboard parent (SPA mobile-first)  │
+│  /[locale]/inscription  → Formulaire public d'inscription       │
+└────────────────────────────┬────────────────────────────────────┘
+                             │ HTTPS / JWT Bearer Token
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      BACKEND (Render.com)                       │
+│                     NestJS REST API :3000                       │
+│                                                                 │
+│  /auth          Auth (login, register, refresh, change-pwd)     │
+│  /admin/…       Routes admin protégées (ADMIN uniquement)       │
+│  /menus         Gestion des menus                               │
+│  /presences     Présences (enseignant/admin)                    │
+│  /daily-resumes Résumés journaliers                             │
+│  /parent/…      Routes parent (profil, enfant, événements)      │
+│  /public/…      Routes publiques (inscription, règlement)       │
+└────────────────────────────┬────────────────────────────────────┘
+                             │ Prisma Client
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   PostgreSQL (Render.com)                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Modules NestJS
+
+| Module | Description |
+|---|---|
+| `AuthModule` | Login JWT, register, refresh token, changement de mot de passe |
+| `UsersModule` | Gestion des utilisateurs (ADMIN/ENSEIGNANT/PARENT) |
+| `InscriptionsModule` | Création, consultation, validation/rejet des demandes d'inscription |
+| `FamillesModule` | Gestion des familles et tuteurs |
+| `EnfantsModule` | Profil enfant, santé, photos |
+| `ClassesModule` | Gestion des classes, affectation enseignants |
+| `PresencesModule` | Suivi présence/absence par enfant et par jour |
+| `DailyResumesModule` | Résumé journalier par enfant (humeur, appétit, sieste, participation) |
+| `MenusModule` | Menus hebdomadaires (Brouillon → Publié) |
+| `EventsModule` | Événements/sorties de la crèche |
+| `ReglementInterieurModule` | Règlement intérieur (lecture publique, édition admin) |
+| `DashboardModule` | Agrégats pour le tableau de bord admin |
+| `ParentModule` | Profil parent, enfant, délégations, résumés |
+| `ClassDailySummariesModule` | Résumé de classe par jour (journal enseignant) |
+
+---
+
+## 4. Fonctionnalités
+
+### 4.1 Inscription des enfants
+
+- **Formulaire public** en 5 étapes accessible sans connexion (`/inscription`)
+  - Étape 1 : Informations enfant + photo
+  - Étape 2 : Coordonnées des parents/tuteurs (CIN, téléphone, désignation responsable principal)
+  - Étape 3 : Personnes autorisées à récupérer l'enfant (`sansRestriction` ou liste nommée avec CIN)
+  - Étape 4 : Santé (médecin, allergies, intolérances, tags maladies/suivi, restrictions alimentaires)
+  - Étape 5 : Règlement intérieur + signature électronique (déclaration sur l'honneur)
+- Le formulaire envoie un payload JSON complet sauvegardé dans `Inscription.payload` (approche audit-log)
+- L'admin consulte les candidatures, peut les **accepter** (crée Famille/Tuteurs/Enfant en base) ou les **rejeter** avec motif
+- Statuts d'inscription : `CANDIDATURE` → `EN_COURS` → `ACTIF` | `REJETEE`
+
+### 4.2 Gestion des présences
+
+- **Enseignants** marquent les présences de leur classe chaque matin (Présent / Absent / Justifié)
+- **Admins** consultent l'historique avec filtres : date, classe, enseignant, statut, nom de l'enfant
+- Export **CSV** + impression **PDF** depuis l'interface admin
+- Pagination côté serveur (25 par page par défaut)
+- **Dashboard parent** : statut du jour, historique mensuel paginé avec statistiques
+
+### 4.3 Résumés journaliers (DailyResume)
+
+- L'enseignant renseigne pour chaque enfant : humeur, sieste, appétit, participation, observations
+- **Dashboard parent** affiche le résumé du jour (onglets présence + accueil)
+- Si pas encore renseigné : message "Résumé pas encore disponible"
+- Navigation par date (précédent/suivant) dans la section présence du dashboard parent
+
+### 4.4 Menus hebdomadaires
+
+- **Admin** crée les menus par jour (collation matin, repas déjeuner, goûter)
+- Workflow de publication : `Brouillon` (invisible aux parents) → `Publié` (visible aux parents)
+- Options de publication :
+  - Case "Publier immédiatement" lors de l'édition d'un jour (cochée par défaut)
+  - Bouton "Publier la semaine" : publie tous les brouillons de la semaine en un clic
+  - Bouton "Ajouter menu semaine" : crée les menus pour les 5 jours vides et les publie
+- **Dashboard parent** : menu du jour + menus de la semaine en cours (filtrés lundi–dimanche)
+
+### 4.5 Profils enseignants
+
+- L'admin gère les enseignants : prénom, nom, fonction (dropdown), spécialité, téléphone
+- Affectation des enseignants aux classes (multi-enseignant par classe)
+- L'enseignant voit ses classes et peut gérer les présences et résumés journaliers
+
+### 4.6 Dashboard parent (mobile-first)
+
+- **Onglet Accueil** : salutation personnalisée, résumé du jour, message de classe, aperçu des prochains événements
+- **Onglet Présence** : statut aujourd'hui, résumé journalier navigable par date, historique mensuel
+- **Onglet Enfant** : profil complet (santé, allergies, intolérances, personnes autorisées), édition inline
+- **Onglet Menu** : menu du jour + tous les menus de la semaine courante
+- **Onglet Événements** : liste complète des événements à venir
+- Mise à jour du profil : téléphone, adresse
+- Changement de mot de passe sécurisé
+
+### 4.7 Santé et délégations
+
+- **Profil santé** de l'enfant : médecin traitant, notes libres, restrictions alimentaires (sans porc, végétarien, sans gluten, autre), tags prédéfinis (maladies, allergies, intolérances, suivi)
+- **Allergies** et **intolérances** listées individuellement avec sévérité
+- **Personnes autorisées** (`Delegation`) à récupérer l'enfant : nom, téléphone, CIN, relation
+- Option `sansRestriction` : aucune restriction sur les personnes autorisées
+
+### 4.8 Classes
+
+- Gestion des classes : nom, niveau (TPS / PS / MS / GS)
+- Affectation multi-enseignants par classe
+- Statistiques : nombre d'élèves par classe
+
+### 4.9 Règlement intérieur
+
+- Lecture publique sans authentification : `GET /public/reglement-interieur`
+- Édition admin : éditeur Markdown avec prévisualisation et versionning
+- Chargé dynamiquement dans le formulaire d'inscription (étape 5)
+
+### 4.10 Événements
+
+- Création d'événements : titre, description, date/heure de début et fin, classe associée
+- **Filtrage automatique** : seuls les événements à venir (endAt ≥ maintenant) sont affichés aux parents
+- Interface admin : séparation "À venir" / "Événements passés" (section rétractable)
+- Visible dans les dashboards parent et enseignant
+
+### 4.11 Informations de l'établissement
+
+- Page dédiée `/admin/etablissement` : nom, adresse, téléphone, email, site web, horaires, capacité d'accueil, description
+- Stockée en base via un enregistrement singleton (`id = "singleton"`, table `EtablissementInfo`)
+- Vue lecture (icônes) + formulaire d'édition inline
+- Visible dans la sidebar admin (section "Notre établissement")
+
+---
+
+## 5. Modèle de données
+
+### Principales entités Prisma
+
+```
+Utilisateur
+  ├── id, email, motDePasse (hash bcrypt), role: ADMIN|ENSEIGNANT|PARENT
+  ├── prenom, nom, telephone, statut (ACTIF|INACTIF)
+  ├── Enseignant     (id, utilisateurId, fonction, specialite)
+  │     └── EnseignantClasse (enseignantId, classeId)
+  └── Tuteur         (id, familleId, lien, prenom, nom, email, telephone, cin, principal)
+
+Famille            (id, emailPrincipal, languePreferee: fr|ar, adresseFacturation)
+  ├── Tuteur[]
+  └── Enfant[]
+        ├── Inscription    (id, enfantId, statut: CANDIDATURE|EN_COURS|ACTIF|REJETEE, payload:Json)
+        ├── ProfilSante    (id, enfantId, medecin, notes, tags:String[], restrictionAlimentaire)
+        │     ├── Allergie (id, profilSanteId, nom, severite)
+        │     └── Intolerance (id, profilSanteId, nom, notes)
+        ├── Delegation     (id, enfantId, nom, telephone, cin, relation)
+        ├── Presence       (id, enfantId, date, statut: Present|Absent|Justifie, arriveeA, departA)
+        └── DailyResume    (id, enfantId, date:unique, humeur, sieste, appetit, participation, observations:String[])
+
+Classe             (id, nom, niveau: TPS|PS|MS|GS, nbEleves)
+Menu               (id, date:unique, collationMatin, repas, gouter, statut: Brouillon|Publie, publieLe)
+  └── MenuAllergen (id, menuId, allergen)
+Evenement          (id, titre, description, startAt, endAt, classeId?)
+ReglementInterieur (id="singleton", contenu, version, modifiePar)
+EtablissementInfo  (id="singleton", nom, adresse, telephone, email, siteWeb?, description?, horaires?, capacite?, modifiePar?, modifieLe)
+ClassDailySummary  (id, classeId, date, activites, apprentissages, observations)
+```
+
+### Flux d'inscription → provisionnement
+
+```
+1. Parent remplit le formulaire (5 étapes)
+   POST /inscriptions  →  crée Inscription { statut: CANDIDATURE, payload: {...} }
+
+2. Admin examine le dossier
+   PATCH /admin/inscriptions/:id/accept
+     → lit payload
+     → upsert Famille (par emailPrincipal)
+     → crée Tuteur(s) avec CIN
+     → crée Enfant (photo, intolerances, sansRestriction, delegations)
+     → crée ProfilSante (allergies, tags)
+     → crée Delegation[] (personnes autorisées)
+     → Inscription.statut = ACTIF
+     → envoi e-mail de bienvenue au parent
+```
+
+---
+
+## 6. Sécurité
+
+### Authentification JWT
+
+- Les tokens JWT sont envoyés dans le header HTTP `Authorization: Bearer <token>`
+- Signés avec `JWT_SECRET` (variable d'environnement, jamais commitée)
+- Expiration configurable (`JWT_EXPIRES_IN`, par défaut `7d`)
+- Mots de passe hachés avec **bcrypt** (salt rounds = 12)
+- Changement de mot de passe : vérifie l'ancien mot de passe avant d'accepter le nouveau
+
+### Contrôle d'accès par rôle (RBAC)
+
+Géré par `RolesGuard` et le décorateur `@Roles()` :
+
+| Rôle | Droits |
+|---|---|
+| `ADMIN` | Accès complet à toutes les routes admin et de gestion |
+| `ENSEIGNANT` | Présences et résumés de ses classes uniquement |
+| `PARENT` | Son profil, son enfant, les menus publiés, les événements |
+
+Les routes publiques (`/auth/login`, `/auth/register`, `/inscriptions`, `/public/*`) n'ont pas de garde.
+
+### Validation stricte des entrées
+
+- `ValidationPipe` avec `whitelist: true, forbidNonWhitelisted: true`
+- Toute propriété inconnue envoyée au backend est **rejetée avec une erreur 400**
+- Chaque DTO utilise des décorateurs de validation : `@IsString()`, `@IsEmail()`, `@IsISO8601()`, `@IsEnum()`, `@IsBoolean()`, `@IsObject()`, `@ValidateNested()`
+
+### Protection des données
+
+- Aucun secret dans le code source — tous gérés par variables d'environnement
+- `.env` listé dans `.gitignore`
+- Les photos d'enfants (base64) sont limitées à 5 Mo, types JPEG/PNG/WEBP uniquement
+- Les données de santé sont dans des tables relationnelles dédiées, accessibles uniquement via les routes authentifiées
+- Filtrage automatique côté backend : un `PARENT` ne voit que les menus `Publie`, pas les brouillons
+
+---
+
+## 7. API REST — Endpoints
 
 ### Authentification
 
-- **JWT Bearer tokens** : chaque requête API inclut un header `Authorization: Bearer <token>`.
-- Tokens signés avec une `JWT_SECRET` définie en variable d'environnement (jamais exposée).
-- Durée de vie configurable (par défaut 7 jours).
-
-### Autorisation (Rôles)
-
-Trois rôles distincts dans le système :
-
-| Rôle | Accès |
-|------|-------|
-| `ADMIN` | Tout — gestion des inscriptions, classes, menus, utilisateurs, présences |
-| `ENSEIGNANT` | Classe assignée — journal, résumés, présences |
-| `PARENT` | Ses enfants uniquement — profil, présences, menus publiés, événements |
-
-- Chaque route est protégée par `JwtAuthGuard` (vérification du token).
-- Les routes sensibles ajoutent `RolesGuard` avec `@Roles('ADMIN')` ou `@Roles('ENSEIGNANT')`.
-- Les parents ne peuvent accéder qu'aux données de **leurs propres enfants** (vérification `famille.tuteurs → utilisateur.id`).
-
-### Validation des données
-
-- `ValidationPipe` global avec `whitelist: true` et `forbidNonWhitelisted: true` : toute propriété non déclarée dans un DTO est **rejetée** (protection contre l'injection de champs).
-- `transform: true` : conversion automatique des types primitifs.
-- Validation côté client avec `zod` (formulaires).
-
-### Protection contre les abus
-
-- **Rate limiting** via `@nestjs/throttler` : limite le nombre de requêtes par IP.
-- Validation de la taille et du type des fichiers uploadés (photos : max 5 Mo, JPEG/PNG/WEBP).
-
-### Données sensibles
-
-- Mots de passe **hachés avec bcrypt** (jamais stockés en clair).
-- Photos d'enfants stockées en base64 dans le payload JSON (acceptable pour de petites images).
-- Endpoint règlement intérieur en lecture seule, sans authentification (`/api/public/reglement-interieur`).
-- Variables d'environnement séparées pour dev/prod — jamais committées.
-
-### CORS
-
-- Backend configuré avec CORS strict : seul le domaine frontend autorisé en production.
-
----
-
-## Fonctionnalités par rôle
-
-### 5.1 Espace Admin
-
-Accessible via `/[locale]/admin/*`
-
-#### Tableau de bord
-
-- Vue statistique globale (nb enfants, inscriptions en attente, présences du jour)
-
-#### Gestion des inscriptions (`/admin/inscriptions`)
-
-- Liste paginée et filtrée des candidatures
-- Statuts : `CANDIDATURE` → `EN_COURS` → `ACTIF` ou `REJETEE`
-- **Accepter une inscription** : crée automatiquement Famille, Tuteur(s), Enfant, ProfilSante, Delegations
-- Voir le dossier complet (données du formulaire sauvegardées en JSON `payload`)
-- Rejeter avec motif
-
-#### Gestion des enfants (`/admin/enfants`)
-
-- Liste avec recherche et filtres par classe
-- Fiche détaillée enfant :
-  - Informations générales (prénom, nom, genre, classe, photo)
-  - **Fiche santé** : allergies, intolérances, tags, restrictions alimentaires, taille/poids
-  - **Historique des présences** avec statistiques (paginated)
-  - **Personnes autorisées** (délégations) — ajout / suppression
-  - Parents / tuteurs
-  - Dossier d'inscription
-- Modifier la fiche enfant inline (modal responsive)
-
-#### Gestion des classes (`/admin/classes`)
-
-- Créer / modifier / supprimer des classes
-- Niveaux : TPS / PS / MS / GS
-- Assigner des enseignants à une classe (multi-sélection)
-
-#### Gestion des menus (`/admin/menus`)
-
-- Vue semaine (tableau desktop / cartes mobile)
-- Créer les menus par jour (Collation matin, Repas déjeuner, Goûter)
-- Remplir toute la semaine en un clic
-- **Publier un menu** (statut `Publie` = visible aux parents)
-- **Publier la semaine** : publie tous les brouillons en un clic
-- À l'enregistrement : case "Publier immédiatement" cochée par défaut
-- Supprimer la semaine
-
-#### Gestion des événements (`/admin/events`)
-
-- Créer des événements avec titre, date, heure, description
-- Visibilité par classe ou globale
-
-#### Gestion des utilisateurs (`/admin/utilisateurs`)
-
-- Liste de tous les comptes (Admin / Enseignant / Parent)
-- Fiche détaillée par utilisateur
-- Modifier le profil enseignant (fonction, spécialité, téléphone)
-
-#### Règlement intérieur (`/admin/reglement-interieur`)
-
-- Éditeur markdown avec prévisualisation
-- Versioning (numéro de version + date de modification)
-
-#### Journal de classe (`/admin/journal`)
-
-- Voir et créer les journaux pédagogiques de chaque classe
-
----
-
-### 5.2 Espace Enseignant
-
-Accessible via `/[locale]/teacher`
-
-#### Tableau de bord principal
-
-- Vue de la classe assignée
-- Liste des enfants avec photos
-- **Saisie des présences** du jour (Présent / Absent par enfant)
-- Soumission groupée avec résumé
-- Voir les présences déjà enregistrées
-
-#### Résumé de journée (`/teacher/summary`)
-
-- Saisir un résumé quotidien par enfant :
-  - Humeur, Sieste, Appétit, Participation
-  - Observations textuelles
-- Journal de classe : activités, apprentissages, observations globales
-
-#### Fiche enfant enseignant (`/teacher/attendance/[id]`)
-
-- Fiche simplifiée avec infos santé et délégations
-
----
-
-### 5.3 Espace Parent
-
-Accessible via `/[locale]/parent` — **SPA mobile-first** avec navigation par onglets
-
-#### Onglet Accueil
-
-- Bonjour personnalisé avec prénom parent
-- Photo de l'enfant et classe
-- **Résumé du jour** : humeur, sieste, appétit, participation + observations
-  - Navigation par date (↑↓ jours)
-  - État vide clair : "Résumé de journée pas encore disponible"
-- Message de la classe (journal pédagogique)
-- Aperçu des 2 prochains événements
-
-#### Onglet Présence
-
-- Statut du jour (Présent ✅ / Absent ❌ / Inconnu ❓)
-- Résumé de journée avec navigation par date
-- **Historique des présences** paginé avec filtre par mois
-- Statistiques : nb présent / absent / total
-
-#### Onglet Enfant
-
-- Photo, nom, classe, date de naissance, enseignants
-- **Personnes autorisées** : voir, ajouter, modifier, supprimer
-- **Profil santé** : allergies, intolérances, tags, restriction alimentaire
-  - Créer / modifier / supprimer le profil santé
-  - Gestion des allergies et intolérances inline
-
-#### Onglet Menu
-
-- **Menu du jour** avec collation matin, repas, goûter
-- **Menus de la semaine** (lundi → dimanche de la semaine en cours)
-  - Mise en avant du jour actuel
-  - Texte complet sans troncature (responsive)
-  - État vide si aucun menu publié
-
-#### Onglet Événements
-
-- Liste de tous les événements à venir
-- Date, heure, description
-
-#### Profil / Paramètres
-
-- Modifier téléphone et adresse
-- Changer le mot de passe
-
----
-
-### 5.4 Formulaire d'inscription public
-
-Accessible via `/[locale]/inscriptions` — **5 étapes**
-
-| Étape | Contenu |
-|-------|---------|
-| **1 — Enfant** | Prénom, nom, date de naissance, genre, photo, classe souhaitée |
-| **2 — Parents** | Mère et/ou père : prénom, nom, email, téléphone, CIN, adresse. Désignation du responsable principal. Déclaration sur l'honneur |
-| **3 — Personnes autorisées** | Sans restriction ou liste de personnes (nom, lien, téléphone, CIN) |
-| **4 — Santé** | Tags maladies / allergies / intolérances / suivi. Restriction alimentaire. Taille/poids. Antécédents. Médicaments |
-| **5 — Règlement** | Affichage du règlement intérieur (chargé depuis l'API). Double confirmation obligatoire |
-
-- Soumission → email de confirmation au parent
-- Données sauvegardées en JSON dans `Inscription.payload` (approche audit log)
-
----
-
-## Modèle de données (Prisma)
-
-```
-Utilisateur ──┬── Tuteur ── Famille ──┬── Enfant ──┬── Classe ──── Enseignant
-              │                        │            ├── ProfilSante ──┬── Allergie
-              └── Enseignant           │            │                 ├── Intolerance
-                                       │            │                 └── AutorisationMedicament
-                                       │            ├── Delegation
-                                       │            ├── Presence
-                                       │            ├── DailyResume
-                                       │            └── Inscription ── payload (JSON)
-                                       │
-                                       Menu (global, statut: Brouillon|Publie)
-                                       Event (global ou par classe)
-                                       JournalClasse (par classe, par jour)
-                                       ReglementInterieur (singleton)
-```
-
-**Entités clés :**
-
-| Modèle | Description |
-|--------|-------------|
-| `Utilisateur` | Compte de connexion (email + mdp hashé + rôle) |
-| `Famille` | Groupe familial avec email principal |
-| `Tuteur` | Parent/tuteur d'une famille |
-| `Enfant` | Enfant inscrit à la crèche |
-| `Classe` | Groupe d'enfants (TPS/PS/MS/GS) avec enseignants |
-| `Enseignant` | Profil professionnel lié à un Utilisateur |
-| `ProfilSante` | Fiche médicale de l'enfant |
-| `Inscription` | Candidature d'inscription (payload JSON complet) |
-| `Presence` | Enregistrement de présence par jour par enfant |
-| `DailyResume` | Résumé de journée par enseignant par enfant |
-| `Menu` | Menu journalier (collationMatin / repas / gouter) |
-| `Delegation` | Personne autorisée à récupérer un enfant |
-
----
-
-## API REST — Endpoints principaux
-
-Base URL : `https://creche-backend-2.onrender.com/api`
-Documentation Swagger : `/api/docs`
-
-### Authentification
-
-| Méthode | Endpoint | Accès | Description |
-|---------|----------|-------|-------------|
-| `POST` | `/auth/login` | Public | Connexion (retourne JWT) |
-| `POST` | `/auth/change-password` | Auth | Changer son mot de passe |
+| Méthode | Route | Authentification | Description |
+|---|---|---|---|
+| POST | `/auth/login` | Publique | Connexion (retourne JWT) |
+| POST | `/auth/register` | Publique | Création de compte parent |
+| POST | `/auth/change-password` | JWT | Changement de mot de passe |
 
 ### Inscriptions
 
-| Méthode | Endpoint | Accès | Description |
-|---------|----------|-------|-------------|
-| `POST` | `/public/inscriptions` | Public | Soumettre une candidature |
-| `GET` | `/admin/inscriptions` | Admin | Lister les inscriptions |
-| `POST` | `/admin/inscriptions/:id/accept` | Admin | Accepter → créer les entités |
-| `POST` | `/admin/inscriptions/:id/reject` | Admin | Rejeter avec motif |
+| Méthode | Route | Rôle | Description |
+|---|---|---|---|
+| POST | `/inscriptions` | Public | Soumettre une inscription |
+| GET | `/admin/inscriptions` | ADMIN | Lister avec filtres et pagination |
+| GET | `/admin/inscriptions/:id` | ADMIN | Détail d'une inscription |
+| PATCH | `/admin/inscriptions/:id/accept` | ADMIN | Accepter (provisionne) |
+| PATCH | `/admin/inscriptions/:id/reject` | ADMIN | Rejeter avec motif |
 
-### Menus
+### Utilisateurs
 
-| Méthode | Endpoint | Accès | Description |
-|---------|----------|-------|-------------|
-| `GET` | `/menus` | Auth | Liste (parents : publiés seulement) |
-| `POST` | `/menus` | Admin | Créer un menu (brouillon) |
-| `PATCH` | `/menus/:id` | Admin | Modifier un menu |
-| `POST` | `/menus/:id/publish` | Admin | Publier |
-| `POST` | `/menus/:id/unpublish` | Admin | Dépublier |
-| `DELETE` | `/menus/:id` | Admin | Supprimer (brouillon uniquement) |
+| Méthode | Route | Rôle | Description |
+|---|---|---|---|
+| GET | `/admin/users` | ADMIN | Lister les utilisateurs |
+| GET | `/admin/users/:id` | ADMIN | Profil d'un utilisateur |
+| PATCH | `/admin/users/:id` | ADMIN | Mettre à jour (profil enseignant) |
+
+### Classes
+
+| Méthode | Route | Rôle | Description |
+|---|---|---|---|
+| GET | `/admin/classes` | ADMIN | Lister toutes les classes |
+| POST | `/admin/classes` | ADMIN | Créer une classe |
+| PATCH | `/admin/classes/:id` | ADMIN | Modifier (nom, niveau) |
+| DELETE | `/admin/classes/:id` | ADMIN | Supprimer |
+| POST | `/admin/classes/:id/teachers` | ADMIN | Affecter un enseignant |
+| DELETE | `/admin/classes/:id/teachers/:uid` | ADMIN | Retirer un enseignant |
 
 ### Présences
 
-| Méthode | Endpoint | Accès | Description |
-|---------|----------|-------|-------------|
-| `GET` | `/classes/:id/presences` | Auth | Présences d'une classe (filtrable) |
-| `POST` | `/classes/:id/presences/batch` | Enseignant | Enregistrement groupé |
-| `GET` | `/parent/enfants/:id/presences` | Parent | Présences de son enfant |
+| Méthode | Route | Rôle | Description |
+|---|---|---|---|
+| GET | `/presences` | ADMIN/ENSEIGNANT | Lister avec filtres et pagination |
+| POST | `/presences` | ENSEIGNANT | Enregistrer une présence |
+| PATCH | `/presences/:id` | ENSEIGNANT | Modifier une présence |
 
-### Résumés de journée
+### Menus
 
-| Méthode | Endpoint | Accès | Description |
-|---------|----------|-------|-------------|
-| `GET` | `/enfants/:id/resume` | Auth | Résumé pour une date |
-| `POST` | `/enfants/:id/resume` | Enseignant | Créer/mettre à jour |
-| `GET` | `/parent/enfants/:id/resume` | Parent | Résumé pour son enfant |
+| Méthode | Route | Rôle | Description |
+|---|---|---|---|
+| GET | `/menus` | JWT | Lister (PARENT → Publiés uniquement) |
+| POST | `/menus` | ADMIN | Créer un menu |
+| PATCH | `/menus/:id` | ADMIN | Modifier |
+| POST | `/menus/:id/publish` | ADMIN | Publier |
+| POST | `/menus/:id/unpublish` | ADMIN | Dépublier (→ Brouillon) |
+| DELETE | `/menus/:id` | ADMIN | Supprimer (brouillon uniquement) |
 
-### Santé enfant (parent)
+### Résumés journaliers
 
-| Méthode | Endpoint | Accès | Description |
-|---------|----------|-------|-------------|
-| `GET` | `/parent/enfants/:id/sante` | Parent | Profil santé |
-| `PUT` | `/parent/enfants/:id/sante` | Parent | Créer/mettre à jour |
-| `DELETE` | `/parent/enfants/:id/sante` | Parent | Supprimer |
+| Méthode | Route | Rôle | Description |
+|---|---|---|---|
+| GET | `/daily-resumes` | ADMIN/ENSEIGNANT | Lister les résumés |
+| POST | `/daily-resumes` | ENSEIGNANT | Créer un résumé |
+| PATCH | `/daily-resumes/:id` | ENSEIGNANT | Modifier |
+| GET | `/parent/children/:id/resume` | PARENT | Résumé d'un enfant pour une date |
 
-### Délégations (parent)
+### Règlement intérieur
 
-| Méthode | Endpoint | Accès | Description |
-|---------|----------|-------|-------------|
-| `GET` | `/parent/enfants/:id/delegations` | Parent | Liste |
-| `POST` | `/parent/enfants/:id/delegations` | Parent | Ajouter |
-| `PATCH` | `/parent/enfants/:id/delegations/:dId` | Parent | Modifier |
-| `DELETE` | `/parent/enfants/:id/delegations/:dId` | Parent | Supprimer |
+| Méthode | Route | Rôle | Description |
+|---|---|---|---|
+| GET | `/public/reglement-interieur` | Public | Lire le règlement |
+| PUT | `/admin/reglement-interieur` | ADMIN | Mettre à jour |
+
+### Établissement
+
+| Méthode | Route | Rôle | Description |
+|---|---|---|---|
+| GET | `/admin/users/etablissement` | ADMIN | Lire les infos de l'établissement |
+| PUT | `/admin/users/etablissement` | ADMIN | Mettre à jour (upsert singleton) |
+
+> **Note** : Ces routes sont déclarées **avant** la route dynamique `GET /admin/users/:id` dans le contrôleur NestJS pour éviter le conflit de routing.
 
 ---
 
-## Internationalisation (i18n)
+## 8. Déploiement
 
-- Géré par **next-intl** avec routing basé sur les locales dans l'URL : `/fr/...` et `/ar/...`
-- Fichiers de traductions :
-  - `creche-frontend/src/messages/fr.json` (français)
-  - `creche-frontend/src/messages/ar.json` (arabe)
-- Support **RTL** complet pour l'arabe (attribut `dir="rtl"` sur `<html>`)
-- Composants UI adaptés (marges, padding, alignements inversés)
+### Processus de déploiement
 
----
+1. Développeur pousse sur la branche `main`
+2. **Render** détecte le push → rebuild et redéploiement automatique du backend (2–5 min)
+3. **Vercel** détecte le push → rebuild et redéploiement automatique du frontend (1–2 min)
 
-## Déploiement
-
-### Backend — Render.com
-
-- Service **Web** sur Render.com connecté au repository GitHub `wlw-tech/creche-backend`
-- Auto-deploy sur push vers `main`
-- Base de données PostgreSQL managée Render (même région)
-- URL : `https://creche-backend-2.onrender.com`
-
-> ⚠️ Le **tier gratuit** Render met le service en veille après inactivité. Premier appel après veille peut prendre 30–60 secondes.
-
-### Frontend — Vercel (ou similaire)
-
-- Repository GitHub `wlw-tech/creche-frontend`
-- Build command : `npm run build`
-- Output directory : `.next`
-
-### Migrations base de données
+### Backend (Render.com)
 
 ```bash
-# Depuis creche-api/
-npx prisma migrate deploy   # En production
-npx prisma migrate dev      # En développement
-npx prisma generate         # Régénérer le client Prisma
+# Build
+npm run build      # compile TypeScript → dist/
+
+# Start
+node dist/main     # démarre le serveur NestJS
+
+# Migrations (au démarrage)
+npx prisma migrate deploy
 ```
 
-> ⚠️ Sur Windows, arrêter le serveur NestJS avant `prisma generate` (DLL verrouillée).
+### Frontend (Vercel)
+
+```bash
+# Build
+next build
+
+# Start (production)
+next start
+```
+
+### Note sur Prisma (développement Windows)
+
+Lors de `npx prisma generate` sur Windows, si le serveur NestJS tourne, la DLL Prisma est verrouillée.
+**Solution** : Arrêter le serveur → `npx prisma generate` → Redémarrer le serveur.
 
 ---
 
-## Variables d'environnement
+## 9. Variables d'environnement
 
 ### Backend (`creche-api/.env`)
 
 ```env
-DATABASE_URL="postgresql://user:password@host:5432/dbname?schema=public"
-JWT_SECRET="votre_secret_jwt_très_long_et_aléatoire"
-JWT_EXPIRATION="7d"
+# Base de données
+DATABASE_URL=postgresql://user:password@host:5432/dbname
 
-# Email (Nodemailer)
-SMTP_HOST="smtp.example.com"
+# JWT
+JWT_SECRET=votre_secret_jwt_tres_long_et_aleatoire
+JWT_EXPIRES_IN=7d
+
+# SMTP (envoi d'emails)
+SMTP_HOST=smtp.example.com
 SMTP_PORT=587
-SMTP_USER="no-reply@petitspas.ma"
-SMTP_PASS="mot_de_passe_smtp"
-EMAIL_FROM="PetitsPas <no-reply@petitspas.ma>"
+SMTP_USER=noreply@petitspas.com
+SMTP_PASS=mot_de_passe_smtp
 
-# URL frontend (pour les liens dans les emails)
-FRONTEND_URL="https://votre-frontend.vercel.app"
+# URL du frontend (pour les liens dans les emails)
+FRONTEND_URL=https://petitspas.vercel.app
 
 # Environnement
-NODE_ENV="production"
+NODE_ENV=production
 PORT=3000
 ```
 
 ### Frontend (`creche-frontend/.env.local`)
 
 ```env
-NEXT_PUBLIC_API_URL="https://creche-backend-2.onrender.com/api"
+# URL de l'API backend
+NEXT_PUBLIC_API_URL=https://petitspas-api.onrender.com
 ```
 
 ---
 
-## Développement local
-
-### Prérequis
-
-- Node.js 20+
-- pnpm (gestionnaire de paquets)
-- PostgreSQL local ou accès Render
-
-### Backend
-
-```bash
-cd creche-api
-pnpm install
-cp .env.example .env   # Configurer DATABASE_URL et JWT_SECRET
-npx prisma migrate dev
-npx prisma generate
-pnpm start:dev         # Lance sur http://localhost:3000
-```
-
-### Frontend
-
-```bash
-cd creche-frontend
-pnpm install
-cp .env.local.example .env.local   # Configurer NEXT_PUBLIC_API_URL
-pnpm dev                           # Lance sur http://localhost:3001
-```
-
-### Comptes de test
-
-Après les migrations, créer un compte admin via l'API ou un seed :
-
-```bash
-# Exemple de seed (à adapter selon votre setup)
-cd creche-api
-npx ts-node prisma/seed.ts
-```
-
----
-
-## Notes importantes pour les développeurs
-
-### Workflow inscriptions
-
-```
-Formulaire public → POST /public/inscriptions
-  → Inscription{statut: CANDIDATURE, payload: {...}}
-  → Email de confirmation envoyé au parent
-
-Admin accepte → POST /admin/inscriptions/:id/accept
-  → Crée Famille (upsert par email)
-  → Crée Tuteur(s) avec cin, adresse
-  → Crée Enfant avec classeId, photo
-  → Crée ProfilSante avec allergies, intolérances, tags
-  → Crée Delegation(s) (personnes autorisées)
-  → Crée compte Utilisateur PARENT + envoie email avec mot de passe temporaire
-  → Inscription{statut: ACTIF}
-```
-
-### Gestion des menus
-
-- Les menus sont **globaux** (pas liés à une classe spécifique).
-- Statut `Brouillon` → invisible aux parents.
-- Statut `Publie` → visible à tous les parents.
-- Depuis l'admin, la case **"Publier immédiatement"** est cochée par défaut à l'enregistrement.
-
-### Résumés de journée
-
-- Un résumé par enfant par date.
-- Créé/mis à jour par l'enseignant de la classe.
-- Accessible en lecture au parent pour ses propres enfants.
-
----
-
-*Documentation générée le 10 mars 2026 — Version application : Sprint 4*
+*Documentation — PetitsPas SaaS — Mars 2026*
